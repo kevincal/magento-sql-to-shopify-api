@@ -1,5 +1,5 @@
 # PyCharm
-.idea
+.idea/*
 
 # virtualenv directory
 magento-sql-to-shopify-api/
