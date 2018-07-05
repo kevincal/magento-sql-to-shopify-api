@@ -1,0 +1,20 @@
+"""
+Settings File
+~~~~~~~~~~~~~
+Copy this file to settings.py and fill in values below.
+"""
+
+config = {
+   "magento-mysql": {
+        "type": "ssh",
+        "host": "127.0.0.1",
+        "user": "*****",
+        "password": "******",
+        "db": "****",
+        "port": 3306,
+        "ssh_host": "111.111.111.111",
+        "ssh_user": "******",
+        "ssh_password": "******"
+    }
+
+}
