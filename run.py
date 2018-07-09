@@ -20,6 +20,8 @@ import traceback
 
 from terminaltables import AsciiTable
 
+# get objects
+import data_objects
 
 # main
 def main():
@@ -27,15 +29,17 @@ def main():
 
     # Assign description to the help doc
     parser = argparse.ArgumentParser(
-        description='Script runs the MLC BI utilities.')
+        description='Script runs to run the Magento SQL -> Shopify API Export/Import Utility.')
 
     # Add arguments
     parser.add_argument(
-        '-l', '--list', action="store_true", help='List Available ETL Modules', required=False)
+        '-l', '--list', action="store_true", help='List Available Objects', required=False)
     parser.add_argument(
-        '-m', '--modules', type=str, help='Import modules to run. Comma-separated. ', required=False, default=None)
+        '-o', '--objects', type=str, help='Objects to export / import. Comma-separated. ', required=False, default=None)
     parser.add_argument(
-        '-r', '--run', action="store_true",  help='Run Modules', required=False)
+        '-r', '--run', action="store_true",  help='Run Utility', required=False)
+    parser.add_argument(
+        '-t', '--test', action="store_true",  help='Test Utility. Only populate Staging Tables', required=False)
     parser.add_argument(
         '-v', '--verbose', action="store_true",  help='Verbosity. 0=Silent, 1=Debug', required=False)
 
@@ -43,85 +47,75 @@ def main():
     args = parser.parse_args()
 
     # get available modules
-    etl_modules = []
-    all_modules = inspect.getmembers(objects, inspect.ismodule)
-    for m in all_modules:
-        if hasattr(m[1], 'Wrangler'):
-            etl_modules.append(m)
+    objects = []
+    all_objects = inspect.getmembers(data_objects, inspect.ismodule)
+    for o in all_objects:
+        if hasattr(o[1], 'Object'):
+            objects.append(o)
 
     # Output List of Modules if --list / -l is passed.
     if args.list:
         table_data = list()
-        table_data.append(['Module', 'Description'])
-        for m in etl_modules:
-            table_data.append([m[0], m[1].__doc__.strip()])
+        table_data.append(['Object', 'Description'])
+        for o in all_objects:
+
+            # skip over classes files
+            if o[0] == "classes":
+                continue
+
+            # build ascii table
+            table_data.append([o[0], o[1].__doc__.strip()])
 
         table = AsciiTable(table_data)
         table.inner_row_border = True
 
         # output
-        print "\nBelow is a list of available modules that can be run using the -m / --modules argument.\n"
+        print "\nBelow is a list of available objects that can be run using the -o / --objects argument.\n"
         print table.table
 
-    # filter modules
-    if args.modules:
-        selected_modules = []
-        module_list = [m for m in args.modules.split(',')]
-        for m in etl_modules:
-            if m[0] in module_list:
-                selected_modules.append(m)
-        etl_modules = selected_modules
-
-    # date range
-    date_range = [args.date_start, args.date_end]
+    # filter objects
+    if args.objects:
+        selected_objects = []
+        object_list = [o for o in args.objects.split(',')]
+        for o in all_objects:
+            if o[0] in object_list:
+                selected_objects.append(o)
+        objects = selected_objects
 
     # run Modules
     if args.run:
         if args.verbose:
-            print "Running ETL modules..."
-            print "Date Range: ", date_range
-            print "Modules: ", [m[0] for m in etl_modules]
+            print "Running Utility..."
+            print "Objects: ", [o[0] for o in objects]
 
-        for m in etl_modules:
+        for o in objects:
 
             if args.verbose:
-                print "---------- " + m[0] + " ------------------------------------------------------------ "
+                print "---------- " + o[0] + " ------------------------------------------------------------ "
 
             # set verbose
             verbose = 1 if args.verbose else 0
 
             # if Wrangler
-            if hasattr(m[1], "Wrangler"):
-                w = m[1].Wrangler(verbose=verbose)
+            if hasattr(o[1], "DataObject"):
+
+                obj = o[1].DataObject(verbose=verbose)
 
                 try:
                     if args.verbose:
-                        print "\nEXTRACTING:"
-                    w.extract(date_range=date_range)
+                        print "\nPRIMING:"
+                        obj.prime()
                 except Exception as err:
                     traceback.print_exc()
-                    w.log(err)
-
-                try:
-                    if args.verbose:
-                        print "\nLOADING:"
-                    w.load()
-                except Exception as err:
-                    traceback.print_exc()
-                    w.log(err)
-
-            # if Wrangler
-            if hasattr(m[1], "Pusher"):
-                p = m[1].Pusher(verbose=verbose)
+                    obj.log(err)
 
                 try:
                     if args.verbose:
                         print "\nPUSHING:"
-                    p.push()
+                    obj.push()
                 except Exception as err:
                     traceback.print_exc()
-                    p.log(err)
-
+                    obj.log(err)
 
     # Return all variable values
     return True

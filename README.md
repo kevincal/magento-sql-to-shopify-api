@@ -13,7 +13,6 @@ Currently supporting CE 1.9x
 Note: Yaml is required for ShopifyAPI and it seems that pyYaml requires Python-dev so make sure that it's installed
 ie., # apt-get install libpython-dev
 
-
 # Installation
 
 After GIT cloning into `magento-sql-to-shopify-api` on your server:
@@ -27,6 +26,14 @@ Next create a settings file with the proper config:
 
 	(magento-sql-to-shopify-api) $ cp settings.py.dist settings.py
 	(magento-sql-to-shopify-api) $ vi settings.py
+
+# Database Setup
+
+Create the staging tables as outlined in [install/staging_tables.sql](install/staging_tables.sql)
+
+# Basic Workflow
+
+TBD
 
 # Command Line
 
