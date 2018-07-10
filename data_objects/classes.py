@@ -6,7 +6,9 @@ Global Classes that make adding addition Export-Import scripts easy.
 
 # standard library imports
 from datetime import datetime
+import json
 import os
+import requests
 
 # related third party imports
 import pymysql.cursors
@@ -38,6 +40,34 @@ class BaseDataObject(object):
         # load config
         self.config = config
 
+    def api_send(self, endpoint, payload, method="post"):
+        """
+        Send Data to Shopify API Endpoint
+        :param endpoint: ie., "/customers.json"
+        :param payload: the dict of the data/object to send to API
+        :param method: "post" is only supported
+        :return: reqest
+        """
+
+        # build api params
+        shopify_api_url = "https://%s:%s@%s/admin" % (config["shopify"]["key"],
+                                                      config["shopify"]["password"],
+                                                      config["shopify"]["url"])
+
+        # build headers
+        headers = {'content-type': 'application/json'}
+
+        # build API url
+        api_url = shopify_api_url + endpoint
+        self.log("Sending Data via '%s' to %s" % (method, api_url))
+
+        if method == "post":
+            r = requests.post(api_url, data=json.dumps(payload), headers=headers)
+
+        # return the JSON Response Content
+        self.log(r.json())
+        return r.json()
+
     def close_db_connection(self):
         """Closes the database connection"""
 
@@ -63,11 +93,18 @@ class BaseDataObject(object):
         return self.db_connection
 
     def log(self, msg):
+
+        # output
         if self.verbose == 1:
+            if isinstance(msg, dict):
+                msg = json.dumps(msg)
             print datetime.now().strftime('%Y-%m-%d %H:%M:%S'), '|', msg
 
     def prime(self, *args, **kwargs):
         """Primes the Staging Tables"""
+
+        # debug
+        self.log("Priming Data...")
 
         # load sql
         with open(os.path.join(self.file_path, self.db_executable_sql), 'r') as f:

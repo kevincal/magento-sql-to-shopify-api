@@ -5,7 +5,16 @@ Copy this file to settings.py and fill in values below.
 """
 
 config = {
-   "magento-mysql": {
+
+    # shopify API
+    "shopify": {
+        "url": "***",
+        "key": "***",
+        "password": "***"
+    },
+
+    # database connection
+    "magento-mysql": {
         "type": "ssh",
         "host": "127.0.0.1",
         "user": "*****",

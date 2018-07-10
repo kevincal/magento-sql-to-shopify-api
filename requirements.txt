@@ -1,5 +1,13 @@
+asn1crypto==0.24.0
+cffi==1.11.5
+cryptography==2.2.2
+enum34==1.1.6
+idna==2.7
+ipaddress==1.0.22
 pyactiveresource==2.1.2
+pycparser==2.18
 PyMySQL==0.7.9
+pyOpenSSL==18.0.0
 PyYAML==3.12
 requests==2.12.1
 ShopifyAPI==3.1.0

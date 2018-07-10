@@ -9,6 +9,7 @@ Currently supporting CE 1.9x
 - VirtualEnv
 - PIP
 - Python 2.7.6
+- Shopify API Key and Password for your Private App
 
 Note: Yaml is required for ShopifyAPI and it seems that pyYaml requires Python-dev so make sure that it's installed
 ie., # apt-get install libpython-dev
@@ -29,7 +30,9 @@ Next create a settings file with the proper config:
 
 # Database Setup
 
-Create the staging tables as outlined in [install/staging_tables.sql](install/staging_tables.sql)
+- Create the staging tables as outlined in [install/staging_tables.sql](install/staging_tables.sql)
+- Create the required SQL functions found in [install/functions.sql](install/functions.sql)
+
 
 # Basic Workflow
 
