@@ -1,7 +1,7 @@
 """
-Customers
-~~~~~~~~~
-Handling Customer Export
+Orders
+~~~~~~
+Handling Order Export
 
 Priming Tables used:
 - *_customer
@@ -25,7 +25,7 @@ from data_objects.classes import BaseDataObject
 class DataObject(BaseDataObject):
 
     # parameters
-    db_executable_sql = "populate_shopify_customer.sql"
+    db_executable_sql = "populate_shopify_orders.sql"
 
     def __init__(self, *args, **kwargs):
 
@@ -126,16 +126,9 @@ class DataObject(BaseDataObject):
                     # put data
                     result = self.api_send('/customers.json', payload, "post")
 
-                    # write the shopify id
-                    if result.get("customer"):
-                        shopify_id = result.get("customer", {}).get("id")
-                        sql = """
-                            UPDATE shopify_customer
-                            SET shopify_id = %s
-                            WHERE email = '%s';
-                        """ % (c.get("email"), shopify_id)
+                    # todo: update if exist?
 
-                    # todo: update if exist? set shopify_id if exist?
+
 
         finally:
             self.close_db_connection()

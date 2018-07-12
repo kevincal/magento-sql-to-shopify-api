@@ -102,7 +102,7 @@ Note about Customer Address.
    exists (ie., husband and wife sharing home number), one customer will keep the phone number
    while the other customer will have that number moved to their 'Notes' field.
 2. Shopify requires phone numbers to follow E161 format so extensions are only supported
-   in specific E161 formats, ie., (NNN) NNN-NNNN;ext=NNN
+   in specific E.164 formats, ie., (NNN) NNN-NNNN;ext=NNN
 **/
 
 -- Create the Default Address
@@ -164,8 +164,8 @@ INSERT INTO shopify_customer_address
 )
 SELECT
   LOWER(TRIM(ce.email)) as email,
-  cev5.value AS first_name,
-  cev7.value AS last_name,
+  TRIM(cev5.value) AS first_name,
+  TRIM(cev7.value) AS last_name,
   IFNULL(caev24.value, '') AS company,
   IFNULL(SUBSTRING_INDEX(caet.value, '\n', 1), '') as street_address_1,
   IFNULL(SUBSTRING_INDEX(SUBSTRING_INDEX(caet.value, '\n', 2), '\n', -1), '') as street_address_2,
@@ -234,7 +234,7 @@ WHERE
 
 -- Format First Name to Aaaaa if no spaces
 UPDATE shopify_customer_address SET
-    first_name = CONCAT(UCASE(LEFT(first_name, 1)), SUBSTRING(LOWER(first_name), 2))
+    first_name = TRIM(CONCAT(UCASE(LEFT(first_name, 1)), SUBSTRING(LOWER(first_name), 2)))
 WHERE
   first_name NOT LIKE '%-%' AND
   first_name NOT LIKE '% %' AND
@@ -242,7 +242,7 @@ WHERE
 
 -- Format Last Name to Aaaaa if no spaces
 UPDATE shopify_customer_address SET
-    last_name = CONCAT(UCASE(LEFT(last_name, 1)), SUBSTRING(LOWER(last_name), 2))
+    last_name = TRIM(CONCAT(UCASE(LEFT(last_name, 1)), SUBSTRING(LOWER(last_name), 2)))
 WHERE
   last_name NOT LIKE '% %' AND
   last_name NOT LIKE '%-%' AND
@@ -261,6 +261,7 @@ UPDATE `shopify_customer_address` SET `Company` = REPLACE(`Company`, '"', "");;
 UPDATE shopify_customer_address SET phone = LOWER(phone);;
 UPDATE shopify_customer_address SET phone = REPLACE(phone, 'ext.', ';') WHERE phone LIKE '%ext.%';;
 UPDATE shopify_customer_address SET phone = REPLACE(phone, 'ext', ';') WHERE phone LIKE '%ext%';;
+UPDATE shopify_customer_address SET phone = REPLACE(phone, 'ext:', ';') WHERE phone LIKE '%ext:%';;
 UPDATE shopify_customer_address SET phone = REPLACE(phone, 'x', ';') WHERE phone LIKE '%x%';;
 
 UPDATE shopify_customer_address SET
@@ -278,7 +279,7 @@ WHERE
 UPDATE shopify_customer_address SET
 	phone = '', phone_ext = ''
 WHERE
-	phone IN ('8888862342', '5128400233', '8888888888', '5122003201', 'tbd', 'n/a');;
+	phone IN ('8888862342', '5128400233', '5126739891', '5129660631', '8888888888', '5122003201', 'tbd', 'n/a');;
 
 -- Reformat Number
 UPDATE shopify_customer_address SET
@@ -292,20 +293,34 @@ UPDATE shopify_customer_address SET
 WHERE
 	phone_ext != '';;
 
+-- Reorder Table such that the next logical update an happen.
+-- We are tagging the '1st' the phone number used and then
+-- moving other uses of that phone number to the shopify
+-- customer 'notes' field by other email addresses
+-- 1. Drop Primary Key
+-- 2. Reorder
+-- 3, Run-Update
+-- 4. Add Primary Key
+ALTER TABLE `shopify_customer_address` DROP `id`;;
+
+ALTER TABLE shopify_customer_address ORDER BY phone, email;;
+
 -- Populate the PhoneCount index
 UPDATE shopify_customer_address,
 	(
-	SELECT DISTINCT
-	  ca.email,
+SELECT DISTINCT
+	  @phone as prv_phone,
+	  @email as prv_email,
 	  ca.phone,
-	  @i:=IF(ca.phone=@phone, @i+1, 1) AS idx,
-	  @phone:=ca.phone
+	  ca.email,
+	  @i := IF(ca.phone != @phone, 1,  IF(ca.email != @email, @i+1, @i)) AS idx,
+	  @phone := ca.phone,
+	  @email := ca.email
 	FROM
 	  shopify_customer_address ca
-	  CROSS JOIN (SELECT @i:=0, @id:=0) AS init
+	  CROSS JOIN (SELECT @i := 0, @phone := '', @email := '') AS init
 	WHERE
 		ca.phone != ''
-	ORDER BY ca.email, ca.phone
 	) as i
 SET shopify_customer_address.phone_idx = i.idx
 WHERE
@@ -323,6 +338,10 @@ SET
 WHERE
 	ca.phone_idx > 1 AND
 	ca.phone != '';;
+
+-- Add Primary Key Back
+ALTER TABLE `shopify_customer_address` ADD `id` INT UNSIGNED NOT NULL  AUTO_INCREMENT  PRIMARY KEY FIRST;;
+
 
 /** ====================== META FIELDS ====================== **/
 /**
