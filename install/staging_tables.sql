@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS `shopify_customer`;
 CREATE TABLE `shopify_customer` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `shopify_id` int(20) DEFAULT NULL,
+  `magento_id` int(20) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `first_name` varchar(255) DEFAULT NULL,
   `last_name` varchar(255) DEFAULT NULL,
@@ -83,6 +84,7 @@ DROP TABLE IF EXISTS `shopify_product`;
 CREATE TABLE `shopify_product` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `shopify_id` int(20) DEFAULT NULL,
+  `magento_id` int(20) DEFAULT NULL,
   `handle` varchar(255) DEFAULT '',
   `title` varchar(255) DEFAULT '',
   `body_html` TEXT DEFAULT '',
