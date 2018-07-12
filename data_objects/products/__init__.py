@@ -26,7 +26,7 @@ from data_objects.classes import BaseDataObject
 class DataObject(BaseDataObject):
 
     # parameters
-    db_executable_sql = "populate_shopify_products.sql"
+    db_executable_sql = "populate_shopify_product.sql"
 
     def __init__(self, *args, **kwargs):
 
@@ -67,7 +67,6 @@ class DataObject(BaseDataObject):
                       `tags`
                     FROM shopify_product
                     ORDER BY magento_id DESC
-                    LIMIT 10
                     """
 
                 # run sql
