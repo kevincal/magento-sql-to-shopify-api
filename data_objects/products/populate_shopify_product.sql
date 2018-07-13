@@ -58,8 +58,8 @@ SELECT DISTINCT
   	ELSE 'Other'
   END AS `product_type`,
   CASE
-    WHEN pstatus.value = 2 THEN 0 -- 2 == Disabled
-    ELSE 1
+    WHEN pstatus.value = 1 AND visibility.value = 4 THEN 1 -- 1 == Status Enabled, 4 = Catalog, Search
+    ELSE 0
   END AS `published`,
   p.created_at AS `published_at`,
   'web' AS `published_scope`,
@@ -73,7 +73,8 @@ FROM
   LEFT OUTER JOIN catalog_product_entity_varchar AS meta_title ON (p.entity_id = meta_title.entity_id AND meta_title.attribute_id = 82)
   LEFT OUTER JOIN catalog_product_entity_varchar AS meta_description ON (p.entity_id = meta_description.entity_id AND meta_description.attribute_id = 84)
   INNER JOIN catalog_product_entity_int AS pstatus ON (p.entity_id = pstatus.entity_id AND pstatus.attribute_id = 96)
-  LEFT OUTER JOIN catalog_product_entity_text AS tags ON (p.entity_id = meta_description.entity_id AND meta_description.attribute_id = 199);;
+  INNER JOIN catalog_product_entity_int AS visibility ON (p.entity_id = visibility.entity_id AND visibility.attribute_id = 102)
+  LEFT OUTER JOIN catalog_product_entity_text AS tags ON (p.entity_id = tags.entity_id AND tags.attribute_id = 199);;
 
 
 /** ====================== PRODUCT VARIANT ====================== **/

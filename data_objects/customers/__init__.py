@@ -57,9 +57,7 @@ class DataObject(BaseDataObject):
                     	IFNULL(note, '') AS note, 
                     	accepts_marketing, tax_exempt
                     FROM shopify_customer
-                    WHERE last_name = 'Tremblay'
                     ORDER BY email
-                    LIMIT 5
                     """
 
                 # run sql
