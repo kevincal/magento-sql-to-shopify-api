@@ -64,6 +64,7 @@ class DataObject(BaseDataObject):
                       `tax_exempt`,
                       `tags`
                     FROM shopify_product
+                    WHERE shopify_id IS NULL
                     ORDER BY magento_id DESC
                     """
 

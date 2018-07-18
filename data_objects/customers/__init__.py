@@ -56,6 +56,7 @@ class DataObject(BaseDataObject):
                     	IFNULL(note, '') AS note, 
                     	accepts_marketing, tax_exempt
                     FROM shopify_customer
+                    WHERE shopify_id IS NULL
                     ORDER BY email
                     """
 

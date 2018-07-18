@@ -62,8 +62,7 @@ class DataObject(BaseDataObject):
                      `note`
                     FROM shopify_gift_card
                     WHERE shopify_id IS NULL
-                    ORDER BY disabled_at DESC
-                    LIMIT 5
+                    ORDER BY `code`
                     """
 
                 # run sql

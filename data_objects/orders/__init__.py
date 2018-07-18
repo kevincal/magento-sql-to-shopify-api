@@ -69,9 +69,8 @@ class DataObject(BaseDataObject):
                       `tags`,
                       `comments`
                     FROM shopify_order
-                    WHERE email = 'kcallahan@gmail.com'
+                    WHERE shopify_id IS NULL
                     ORDER BY email
-                    LIMIT 2
                     """
 
                 # run sql
