@@ -19,6 +19,7 @@ TRUNCATE TABLE shopify_customer_metafield;;
 
 -- Prep sales_flat_order by trimming and lower() email
 UPDATE sales_flat_order SET customer_email = LOWER(TRIM(customer_email));;
+UPDATE customer_entity SET email = LOWER(TRIM(email));;
 
 /** ====================== BASE CUSTOMER RECORD ====================== **/
 /**
@@ -56,6 +57,13 @@ FROM
 	LEFT OUTER JOIN newsletter_subscriber ns ON ns.subscriber_email = so.customer_email
 WHERE
   cg.customer_group_code NOT LIKE '%MLC%';;
+
+-- Update Magento ID
+UPDATE
+  shopify_customer sc
+  INNER JOIN customer_entity c ON c.email = sc.email
+SET
+  sc.magento_id = c.entity_id;;
 
 -- Update First and Last Name from Most Recent Billing Address
 UPDATE
@@ -296,9 +304,9 @@ UPDATE `shopify_customer_address` SET `Company` = REPLACE(`Company`, '"', "");;
 
 -- Split Exenstions
 UPDATE shopify_customer_address SET phone = LOWER(phone);;
+UPDATE shopify_customer_address SET phone = REPLACE(phone, 'ext:', ';') WHERE phone LIKE '%ext:%';;
 UPDATE shopify_customer_address SET phone = REPLACE(phone, 'ext.', ';') WHERE phone LIKE '%ext.%';;
 UPDATE shopify_customer_address SET phone = REPLACE(phone, 'ext', ';') WHERE phone LIKE '%ext%';;
-UPDATE shopify_customer_address SET phone = REPLACE(phone, 'ext:', ';') WHERE phone LIKE '%ext:%';;
 UPDATE shopify_customer_address SET phone = REPLACE(phone, 'x', ';') WHERE phone LIKE '%x%';;
 
 UPDATE shopify_customer_address SET

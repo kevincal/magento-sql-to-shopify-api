@@ -41,7 +41,7 @@ CREATE TABLE `shopify_customer_address` (
   `is_default` smallint(1) DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 -- Create syntax for TABLE 'shopify_customer_fix'
 DROP TABLE IF EXISTS `shopify_customer_fix`;
