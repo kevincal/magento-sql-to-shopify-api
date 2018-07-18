@@ -104,7 +104,7 @@ def main():
                 try:
                     if args.verbose:
                         print "\nPRIMING:"
-                        obj.prime()
+                        # obj.prime()
                 except Exception as err:
                     traceback.print_exc()
                     obj.log(err)

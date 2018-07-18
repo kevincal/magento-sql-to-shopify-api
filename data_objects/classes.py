@@ -50,6 +50,9 @@ class BaseDataObject(object):
         :return: reqest
         """
 
+        # config
+        config = self.config
+
         # default JSON Response Content
         response = {}
 
@@ -65,8 +68,13 @@ class BaseDataObject(object):
         api_url = shopify_api_url + endpoint
         self.log("Sending Data via '%s' to %s" % (method, api_url))
 
+        # post
+        data = None
+        if payload:
+            data = json.dumps(payload, default=self.json_serial)
+
         if method == "post":
-            r = requests.post(api_url, data=json.dumps(payload, default=self.json_serial), headers=headers)
+            r = requests.post(api_url, data=data, headers=headers)
             response = r.json()
 
         # debug
@@ -79,6 +87,10 @@ class BaseDataObject(object):
             obj = payload.keys()[0]
             if obj == "customer":
                 key = payload[obj].get("email")
+            if obj == "gift_card":
+                key = payload[obj].get("code")
+            if obj == "order":
+                key = payload[obj].get("name")
             if obj == "product":
                 key = payload[obj].get("handle")
 
@@ -91,7 +103,7 @@ class BaseDataObject(object):
                 "data": json.dumps(payload, default=self.json_serial)
             }
 
-            self.write_results("shopify_log", [error_log,], keep_open=True)
+            self.write_results("shopify_log", [error_log,], keep_alive=True)
 
         # return the JSON Response Content
         return response
@@ -173,7 +185,7 @@ class BaseDataObject(object):
             for sql in sql_list:
                 if sql.strip() != "":
                     with db_connection.cursor() as cursor:
-                        self.log(sql)
+                        # self.log(sql)
                         cursor.execute(sql, None)
                 db_connection.commit()
         finally:

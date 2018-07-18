@@ -147,9 +147,8 @@ class DataObject(BaseDataObject):
                     cursor.execute(metafields_sql)
                     payload["product"]["metafields"] = list(cursor.fetchall())
 
-                    self.log(payload)
-
                     # put data
+                    self.log(payload)
                     result = self.api_send('/products.json', payload, "post")
 
                     # write the shopify id

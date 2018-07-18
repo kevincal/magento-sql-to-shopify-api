@@ -25,7 +25,7 @@ UPDATE sales_flat_order SET customer_email = LOWER(TRIM(customer_email));;
 Notes about Customer Record:
 1. We are normalizing email address by lowercasing and triming white space.
 2. We attempt to fix any basic case formatting on first and last names
-3. (TODO) We have created a manual 'fix' process in which possible duplictae customers
+3. (TODO) We have created a manual 'fix' process in which possible duplicate customers
    can be fixed by remapping email addresses. ie., kevin@hotmal.com and kevin@hotmail.com
    have the same phone number, we want to map orders from kevin@hotmal.com to the correct
    kevin@hotmail.com customer record.
@@ -55,8 +55,7 @@ FROM
 	LEFT OUTER JOIN customer_group cg ON cg.customer_group_id = so.customer_group_id
 	LEFT OUTER JOIN newsletter_subscriber ns ON ns.subscriber_email = so.customer_email
 WHERE
-  cg.customer_group_code NOT LIKE '%MLC%'
-  LIMIT 1000;;
+  cg.customer_group_code NOT LIKE '%MLC%';;
 
 -- Update First and Last Name from Most Recent Billing Address
 UPDATE
@@ -105,10 +104,11 @@ Note about Customer Address.
    in specific E.164 formats, ie., (NNN) NNN-NNNN;ext=NNN
 **/
 
--- Create the Default Address
+-- Create the Customer Address from Billing Address
 INSERT INTO shopify_customer_address
 (
   `email`,
+  `magento_id`,
   `first_name`,
   `last_name`,
   `company`,
@@ -123,6 +123,7 @@ INSERT INTO shopify_customer_address
 )
 SELECT
   recent.email,
+  oa.entity_id,
   IFNULL(TRIM(oa.firstname), '') as first_name,
   IFNULL(TRIM(oa.lastname), '') as last_name,
   IFNULL(oa.company, '') AS company,
@@ -146,11 +147,46 @@ FROM
 	) AS recent ON recent.email = sc.email
 	INNER JOIN sales_flat_order_address AS oa ON oa.entity_id = recent.max_entity_id;;
 
-
--- Create the Addresses
+-- Create the Customer Address from Shipping Address
 INSERT INTO shopify_customer_address
 (
   `email`,
+  `magento_id`,
+  `first_name`,
+  `last_name`,
+  `company`,
+  `address1`,
+  `address2`,
+  `city`,
+  `province`,
+  `country_code`,
+  `zip`,
+  `phone`
+)
+SELECT
+  sc.email,
+  oa.entity_id,
+  IFNULL(TRIM(oa.firstname), '') as first_name,
+  IFNULL(TRIM(oa.lastname), '') as last_name,
+  IFNULL(oa.company, '') AS company,
+  IFNULL(SUBSTRING_INDEX(oa.street, '\n', 1), '') AS adddress1,
+  IFNULL(SUBSTRING_INDEX(SUBSTRING_INDEX(oa.street, '\n', 2), '\n', -1), '') AS address2,
+  IFNULL(oa.city, '') AS city,
+  IFNULL(oa.region, '') AS province,
+  IFNULL(oa.country_id, '') AS country,
+  IFNULL(oa.postcode, '') AS zip,
+  IFNULL(oa.telephone, '') AS phone
+FROM
+	shopify_customer AS sc
+	INNER JOIN sales_flat_order o ON o.customer_email = sc.email
+	INNER JOIN sales_flat_order_address AS oa ON oa.entity_id = o.shipping_address_id;;
+
+
+-- Create the Customer Address from the Customer Record
+INSERT INTO shopify_customer_address
+(
+  `email`,
+  `magento_id`,
   `first_name`,
   `last_name`,
   `company`,
@@ -164,6 +200,7 @@ INSERT INTO shopify_customer_address
 )
 SELECT
   LOWER(TRIM(ce.email)) as email,
+  NULL AS magento_id,
   TRIM(cev5.value) AS first_name,
   TRIM(cev7.value) AS last_name,
   IFNULL(caev24.value, '') AS company,

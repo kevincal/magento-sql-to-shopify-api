@@ -5,5 +5,5 @@ These are the base objects in which to query Magento SQL and import into Shopify
 the Shopify API
 """
 
-import customers, products
+import customers, gift_cards, orders, products
 

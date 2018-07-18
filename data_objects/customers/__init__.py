@@ -85,10 +85,10 @@ class DataObject(BaseDataObject):
 
                     # get address info
                     address_sql = """
-                        SELECT
+                        SELECT DISTINCT 
                               `first_name`, `last_name`, `company`,
                               `address1`, `address2`, 
-                              `city`, `province`,`country_code`, `zip`,
+                              `city`, `province`, `country_code`, `zip`,
                               `phone`,
                               `is_default` as `default`
                         FROM shopify_customer_address
