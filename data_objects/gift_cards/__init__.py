@@ -1,7 +1,9 @@
 """
 Gift Cards
 ~~~~~~~~~~
-Handling Gift Card Export. Must be run AFTER customers is imported.
+Handling Gift Card Export.
+Must be run AFTER customers is imported.
+Must be run BEFORE customers is imported.
 
 Priming Tables used:
 - *_gift_card

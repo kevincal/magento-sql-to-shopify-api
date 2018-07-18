@@ -30,7 +30,8 @@ CREATE TABLE `shopify_order` (
   `fulfillment_status` varchar(50) DEFAULT NULL,
   `source_name` VARCHAR(10) DEFAULT 'api',
   `tags` varchar(255) DEFAULT '',
-  `note` text,
+  `note` TEXT DEFAULT NULL,
+  `comments` TEXT DEFAULT NULL
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;

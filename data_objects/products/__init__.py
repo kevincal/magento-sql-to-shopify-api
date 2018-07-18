@@ -2,12 +2,10 @@
 Products
 ~~~~~~~~
 Handling Product Export
+Must be run before ORDERS.
 
 Priming Tables used:
 - *_product
-_ *_product_variant
-_ *_product_image
-_ *_product_metafield
 
 """
 

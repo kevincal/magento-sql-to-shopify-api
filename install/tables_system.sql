@@ -12,5 +12,5 @@ CREATE TABLE `shopify_log` (
   `data` TEXT DEFAULT NULL,
   `timestamp` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `email` (`object`, `key`)
+  KEY `object_key` (`object`, `key`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;

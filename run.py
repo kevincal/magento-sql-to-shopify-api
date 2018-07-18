@@ -37,9 +37,11 @@ def main():
     parser.add_argument(
         '-o', '--objects', type=str, help='Objects to export / import. Comma-separated. ', required=False, default=None)
     parser.add_argument(
-        '-r', '--run', action="store_true",  help='Run Utility', required=False)
+        '--prime', action="store_true", help='Prime Utility. Populate Staging Tables only.', required=False)
     parser.add_argument(
-        '-t', '--test', action="store_true",  help='Test Utility. Only populate Staging Tables', required=False)
+        '--push', action="store_true", help='Push Utility. Push data from Staging Tables into Shopify API', required=False)
+    parser.add_argument(
+        '-r', '--run', action="store_true",  help='Run Push then Pull Utilities', required=False)
     parser.add_argument(
         '-v', '--verbose', action="store_true",  help='Verbosity. 0=Silent, 1=Debug', required=False)
 
@@ -83,8 +85,17 @@ def main():
         objects = selected_objects
 
     # run Modules
+    prime_flag = args.prime
+    push_flag = args.push
+
     if args.run:
+        prime_flag = True
+        push_flag = True
+
+    if prime_flag or push_flag:
+
         if args.verbose:
+
             print "Running Utility..."
             print "Objects: ", [o[0] for o in objects]
 
@@ -96,26 +107,27 @@ def main():
             # set verbose
             verbose = 1 if args.verbose else 0
 
-            # if Wrangler
+            # if DataObject
             if hasattr(o[1], "DataObject"):
 
                 obj = o[1].DataObject(verbose=verbose)
 
-                try:
-                    if args.verbose:
-                        print "\nPRIMING:"
-                        # obj.prime()
-                except Exception as err:
-                    traceback.print_exc()
-                    obj.log(err)
-
-                try:
-                    if args.verbose:
-                        print "\nPUSHING:"
-                    obj.push()
-                except Exception as err:
-                    traceback.print_exc()
-                    obj.log(err)
+                if prime_flag:
+                    try:
+                        if args.verbose:
+                            print "\nPRIMING:"
+                            obj.prime()
+                    except Exception as err:
+                        traceback.print_exc()
+                        obj.log(err)
+                if push_flag:
+                    try:
+                        if args.verbose:
+                            print "\nPUSHING:"
+                        obj.push()
+                    except Exception as err:
+                        traceback.print_exc()
+                        obj.log(err)
 
     # Return all variable values
     return True

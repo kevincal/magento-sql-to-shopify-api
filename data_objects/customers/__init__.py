@@ -1,12 +1,11 @@
 """
 Customers
 ~~~~~~~~~
-Handling Customer Export
+Handling Customer Export.
+Must be run before GIFT_CARDS and before ORDERS.
 
 Priming Tables used:
 - *_customer
-_ *_customer_address
-_ *_customer_note
 
 """
 

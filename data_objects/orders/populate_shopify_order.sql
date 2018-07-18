@@ -77,11 +77,18 @@ SELECT DISTINCT
 FROM
   sales_flat_order o
   INNER JOIN shopify_customer sc ON sc.email = o.customer_email
-  INNER JOIN shopify_customer_address sca ON sca.email = sc.email AND sca.is_default = 1
-LIMIT 50;;
+  INNER JOIN shopify_customer_address sca ON sca.email = sc.email AND sca.is_default = 1;;
 
+/** ====================== ORDER GIFT MESSAGE / NOTE ====================== **/
 
-/** ====================== ORDER NOTES ====================== **/
+UPDATE
+  shopify_order so
+  INNER JOIN sales_flat_order o ON o.increment_id = so.name
+  INNER JOIN gift_message AS g ON g.gift_message_id = o.gift_message_id
+SET
+  so.note = g.message;;
+
+/** ====================== ORDER COMMENTS ====================== **/
 
 UPDATE
   shopify_order so
@@ -95,7 +102,7 @@ UPDATE
     GROUP BY parent_id
     ) AS c ON so.magento_id = c.parent_id
 SET
-  so.note = c.comments;;
+  so.comments = c.comments;;
 
 /** ====================== ORDER BILLING ADDRESS ====================== **/
 

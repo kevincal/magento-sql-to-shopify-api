@@ -2,10 +2,10 @@
 Orders
 ~~~~~~
 Handling Order Export
+Must be run after PRODUCTS and CUSTOMERS.
 
 Priming Tables used:
 - *_order
-_ *_order_*
 
 """
 
@@ -66,7 +66,8 @@ class DataObject(BaseDataObject):
                       `processed_at`,
                       `cancel_reason`,
                       `cancelled_at`,
-                      `tags`
+                      `tags`,
+                      `comments`
                     FROM shopify_order
                     WHERE email = 'kcallahan@gmail.com'
                     ORDER BY email
@@ -102,6 +103,16 @@ class DataObject(BaseDataObject):
                     payload["order"]["suppress_notifications"] = True
                     payload["order"]["send_receipt"] = False
                     payload["order"]["send_fulfillment_receipt"] = False
+
+                    # comments
+                    comments = r.get("comments")
+                    payload["order"].pop('comments', None)
+                    payload["order"]["note_attributes"] = [
+                        {
+                            "name": "Legacy Comments",
+                            "value": comments
+                        }
+                    ]
 
                     # get address info
                     address_sql = """

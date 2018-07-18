@@ -8,7 +8,7 @@ Staging Tables for the Magento SQL to Shopify API
 DROP TABLE IF EXISTS `shopify_product`;
 CREATE TABLE `shopify_product` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `shopify_id` int(20) DEFAULT NULL,
+  `shopify_id` bigint(20) DEFAULT NULL,
   `magento_id` int(20) DEFAULT NULL,
   `handle` varchar(255) DEFAULT '',
   `title` varchar(255) DEFAULT '',
