@@ -137,10 +137,10 @@ SELECT
   IFNULL(oa.company, '') AS company,
   IFNULL(SUBSTRING_INDEX(oa.street, '\n', 1), '') AS adddress1,
   IFNULL(SUBSTRING_INDEX(SUBSTRING_INDEX(oa.street, '\n', 2), '\n', -1), '') AS address2,
-  IFNULL(oa.city, '') AS city,
-  IFNULL(oa.region, '') AS province,
+  IFNULL(TRIM(oa.city), '') AS city,
+  IFNULL(TRIM(oa.region), '') AS province,
   IFNULL(oa.country_id, '') AS country,
-  IFNULL(oa.postcode, '') AS zip,
+  IFNULL(TRIM(oa.postcode), '') AS zip,
   IFNULL(oa.telephone, '') AS phone,
   1 AS is_default
 FROM
@@ -179,10 +179,10 @@ SELECT
   IFNULL(oa.company, '') AS company,
   IFNULL(SUBSTRING_INDEX(oa.street, '\n', 1), '') AS adddress1,
   IFNULL(SUBSTRING_INDEX(SUBSTRING_INDEX(oa.street, '\n', 2), '\n', -1), '') AS address2,
-  IFNULL(oa.city, '') AS city,
+  IFNULL(TRIM(oa.city), '') AS city,
   IFNULL(oa.region, '') AS province,
   IFNULL(oa.country_id, '') AS country,
-  IFNULL(oa.postcode, '') AS zip,
+  IFNULL(TRIM(oa.postcode), '') AS zip,
   IFNULL(oa.telephone, '') AS phone
 FROM
 	shopify_customer AS sc
@@ -214,10 +214,10 @@ SELECT
   IFNULL(caev24.value, '') AS company,
   IFNULL(SUBSTRING_INDEX(caet.value, '\n', 1), '') as street_address_1,
   IFNULL(SUBSTRING_INDEX(SUBSTRING_INDEX(caet.value, '\n', 2), '\n', -1), '') as street_address_2,
-  caev26.value AS city,
+  TRIM(caev26.value) AS city,
   r.code as province,
   caev27.value as country,
-  caev30.value AS zip,
+  TRIM(caev30.value) AS zip,
   caev31.value as phone
 FROM
   customer_entity ce
