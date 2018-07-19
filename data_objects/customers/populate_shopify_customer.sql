@@ -448,6 +448,29 @@ SELECT DISTINCT
     	LEFT OUTER JOIN customer_group cg ON c.group_id = cg.customer_group_id
     	ON c.entity_id = so.customer_id;;
 
+
+-- Save First Order Date
+INSERT INTO shopify_customer_metafield
+(
+  `email`,
+  `key`,
+  `namespace`,
+  `value`,
+  `value_type`
+)
+SELECT DISTINCT
+  sc.email,
+  'Created Date',
+  'MLC',
+  DATE_FORMAT(MIN(so.created_at), '%Y-%m-%d'),
+  'string'
+FROM
+  shopify_customer sc
+	INNER JOIN sales_flat_order so ON sc.email = so.customer_email
+GROUP BY
+  sc.email;;
+
+
 /** ====================== TAGS ====================== **/
 /**
 Note aboute Customer Tags:

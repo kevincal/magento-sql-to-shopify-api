@@ -86,9 +86,11 @@ class DataObject(BaseDataObject):
                     # get address info
                     address_sql = """
                         SELECT DISTINCT 
-                              `first_name`, `last_name`, `company`,
+                              `first_name`, `last_name`, 
+                              `company`,
                               `address1`, `address2`, 
-                              `city`, `province`, `country_code`, `zip`,
+                              TRIM(`city`) as `city`, 
+                              `province`, `country_code`, `zip`,
                               `phone`,
                               `is_default` as `default`
                         FROM shopify_customer_address
@@ -97,7 +99,15 @@ class DataObject(BaseDataObject):
 
                     self.log(address_sql)
                     cursor.execute(address_sql)
-                    payload["customer"]["addresses"] = list(cursor.fetchall())
+                    addresses = list(cursor.fetchall())
+                    fixed_addresses = []
+                    for a in addresses:
+                        a["city"] = a.get("city").title()
+                        a["address1"] = a.get("address1").title()
+                        a["address2"] = a.get("address2").title()
+                        fixed_addresses.append(a)
+
+                    payload["customer"]["addresses"] = fixed_addresses
 
                     # get default phone number
                     for a in payload["customer"]["addresses"]:
@@ -131,7 +141,9 @@ class DataObject(BaseDataObject):
                             UPDATE shopify_customer
                             SET shopify_id = %s
                             WHERE email = '%s';
-                        """ % (c.get("email"), shopify_id)
+                        """ % (shopify_id, c.get("email"))
+
+                    self.execute(sql, keep_alive=True)
 
                     # todo: update if exist? set shopify_id if exist?
 
