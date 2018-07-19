@@ -6,3 +6,4 @@ magento-sql-to-shopify-api/
 
 # library specific
 settings.py
+settings.*.py

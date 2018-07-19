@@ -56,6 +56,7 @@ FROM
 	LEFT OUTER JOIN customer_group cg ON cg.customer_group_id = so.customer_group_id
 	LEFT OUTER JOIN newsletter_subscriber ns ON ns.subscriber_email = so.customer_email
 WHERE
+  so.customer_email IS NOT NULL AND
   cg.customer_group_code NOT LIKE '%MLC%';;
 
 -- Update Magento ID
@@ -65,18 +66,29 @@ UPDATE
 SET
   sc.magento_id = c.entity_id;;
 
+-- Create A Temp Table
+CREATE TEMPORARY TABLE IF NOT EXISTS tmp_recent_order_address
+(
+address_id int(11) NOT NULL,
+email varchar(255) NOT NULL,
+PRIMARY KEY (address_id)
+) ENGINE=MyISAM;;
+
+INSERT INTO tmp_recent_order_address (email, address_id)
+SELECT
+  o.customer_email as email, max(oa.entity_id) as max_entity_id
+FROM
+  sales_flat_order o, sales_flat_order_address oa
+WHERE
+  o.billing_address_id = oa.entity_id AND
+  oa.address_type = 'billing'
+GROUP BY o.customer_email;;
+
 -- Update First and Last Name from Most Recent Billing Address
 UPDATE
 	shopify_customer AS sc
-	INNER JOIN (
-		SELECT o.customer_email as email, max(oa.entity_id) as max_entity_id
-		FROM sales_flat_order o, sales_flat_order_address oa
-		WHERE
-		  o.billing_address_id = oa.entity_id AND
-		  oa.address_type = 'billing'
-		GROUP BY o.customer_email
-	) AS recent ON recent.email = sc.email
-	INNER JOIN sales_flat_order_address AS oa ON oa.entity_id = recent.max_entity_id
+	INNER JOIN tmp_recent_order_address AS recent ON recent.email = sc.email
+	INNER JOIN sales_flat_order_address AS oa ON oa.entity_id = recent.address_id
 SET
 	sc.first_name = IFNULL(TRIM(oa.firstname), ''),
 	sc.last_name= IFNULL(TRIM(oa.lastname), '');;
@@ -100,7 +112,6 @@ WHERE
   last_name NOT LIKE 'O`%' AND
   last_name NOT LIKE 'O\'%' AND
   LENGTH(last_name) > 2;;
-
 
 /** ====================== CUSTOMER ADDRESSES ====================== **/
 /**
@@ -145,15 +156,8 @@ SELECT
   1 AS is_default
 FROM
 	shopify_customer AS sc
-	INNER JOIN (
-		SELECT o.customer_email as email, max(oa.entity_id) as max_entity_id
-		FROM sales_flat_order o, sales_flat_order_address oa
-		WHERE
-		  o.billing_address_id = oa.entity_id AND
-		  oa.address_type = 'billing'
-		GROUP BY o.customer_email
-	) AS recent ON recent.email = sc.email
-	INNER JOIN sales_flat_order_address AS oa ON oa.entity_id = recent.max_entity_id;;
+	INNER JOIN tmp_recent_order_address AS recent ON recent.email = sc.email
+	INNER JOIN sales_flat_order_address AS oa ON oa.entity_id = recent.address_id;;
 
 -- Create the Customer Address from Shipping Address
 INSERT INTO shopify_customer_address
@@ -255,11 +259,35 @@ FROM
   -- company
   INNER JOIN customer_address_entity_varchar caev24 ON (cae.entity_id = caev24.entity_id AND caev24.attribute_id = 24);;
 
+-- Delete Duplicate Address 2
 UPDATE shopify_customer_address SET
 	address2 = ''
 WHERE
 	address1 != '' AND
 	address1 = address2;;
+
+-- Format First Name to Aaaaa if no spaces
+UPDATE shopify_customer_address SET
+    first_name = CONCAT(UCASE(LEFT(first_name, 1)), SUBSTRING(LOWER(first_name), 2))
+WHERE
+  first_name NOT LIKE '%-%' AND
+  first_name NOT LIKE '% %' AND
+  LENGTH(first_name) > 3;;
+
+-- Format Last Name to Aaaaa if no spaces
+UPDATE shopify_customer_address SET
+  last_name = CONCAT(UCASE(LEFT(last_name, 1)), SUBSTRING(LOWER(last_name), 2))
+WHERE
+  last_name NOT LIKE '% %' AND
+  last_name NOT LIKE '%-%' AND
+  last_name NOT LIKE 'Mc%' AND
+  last_name NOT LIKE 'Mac%' AND
+  last_name NOT LIKE 'O`%' AND
+  last_name NOT LIKE 'O\'%' AND
+  LENGTH(last_name) > 2;;
+
+-- Drop the Temp Table
+DROP TABLE IF EXISTS tmp_recent_order_address;;
 
 -- Delete Duplicates
 DELETE shopify_customer_address

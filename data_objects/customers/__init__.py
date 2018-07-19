@@ -58,6 +58,7 @@ class DataObject(BaseDataObject):
                     FROM shopify_customer
                     WHERE shopify_id IS NULL
                     ORDER BY email
+                    LIMIT 5
                     """
 
                 # run sql
