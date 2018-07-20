@@ -118,6 +118,7 @@ class DataObject(BaseDataObject):
                     metafields_sql = """
                         SELECT
                           `key`,
+                          `description`,
                           `namespace`,
                           `value`,
                           `value_type`

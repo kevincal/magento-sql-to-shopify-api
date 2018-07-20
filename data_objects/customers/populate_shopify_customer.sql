@@ -37,15 +37,12 @@ Notes about Customer Record:
 INSERT IGNORE INTO shopify_customer
 (
 	`email`,
-	`accepts_marketing`,
+  `accepts_marketing`,
 	`tax_exempt`
 )
 SELECT SQL_CACHE DISTINCT
 	so.customer_email AS email,
-  CASE
-		WHEN ns.subscriber_status = 1 THEN 1
-		ELSE 0
-	END AS accepts_marketing,
+  1 AS accepts_marketing,
 	CASE
 		WHEN cg.customer_group_code LIKE '%Non-Profit%' THEN 1
 		ELSE 0
@@ -65,6 +62,25 @@ UPDATE
   INNER JOIN customer_entity c ON c.email = sc.email
 SET
   sc.magento_id = c.entity_id;;
+
+/** ====================== EMAIL OPT OUT ====================== **/
+UPDATE
+    shopify_customer c
+    INNER JOIN mailchimp_unsubscribe u ON u.email = c.email
+SET
+    accepts_marketing = 0;;
+
+UPDATE
+    shopify_customer c
+    INNER JOIN newsletter_subscriber s ON s.subscriber_email = c.email
+SET
+    accepts_marketing = 0
+WHERE
+  s.subscriber_status = 3;;
+
+
+/** ====================== ADDRESS ====================== **/
+
 
 -- Create A Temp Table
 CREATE TEMPORARY TABLE IF NOT EXISTS tmp_recent_order_address
@@ -426,6 +442,7 @@ INSERT INTO shopify_customer_metafield
 (
   `email`,
   `key`,
+  `description`,
   `namespace`,
   `value`,
   `value_type`
@@ -433,6 +450,7 @@ INSERT INTO shopify_customer_metafield
 SELECT DISTINCT
   so.customer_email as email,
   'Legacy Customer Group',
+  'Customer Group we used to Classify Customers',
   'MLC',
   CASE
 	WHEN cg.customer_group_code IS NULL THEN 'Direct: Consumer Online'
@@ -454,6 +472,7 @@ INSERT INTO shopify_customer_metafield
 (
   `email`,
   `key`,
+  `description`,
   `namespace`,
   `value`,
   `value_type`
@@ -461,6 +480,7 @@ INSERT INTO shopify_customer_metafield
 SELECT DISTINCT
   sc.email,
   'Created Date',
+  'Date Customer was Created',
   'MLC',
   DATE_FORMAT(MIN(so.created_at), '%Y-%m-%d'),
   'string'
@@ -469,6 +489,8 @@ FROM
 	INNER JOIN sales_flat_order so ON sc.email = so.customer_email
 GROUP BY
   sc.email;;
+
+
 
 
 /** ====================== TAGS ====================== **/

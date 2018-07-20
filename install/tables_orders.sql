@@ -113,6 +113,7 @@ CREATE TABLE `shopify_order_metafield` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) DEFAULT NULL,
   `key` varchar(50) DEFAULT NULL,
+  `description` varchar(255) DEFAULT NULL,
   `namespace` varchar(50) DEFAULT NULL,
   `value` TEXT DEFAULT NULL,
   `value_type` varchar(50) DEFAULT NULL,

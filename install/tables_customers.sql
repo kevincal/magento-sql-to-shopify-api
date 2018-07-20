@@ -61,6 +61,7 @@ CREATE TABLE `shopify_customer_metafield` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `email` varchar(255) DEFAULT NULL,
   `key` varchar(50) DEFAULT NULL,
+  `description` varchar(255) DEFAULT NULL,
   `namespace` varchar(50) DEFAULT NULL,
   `value` varchar(255) DEFAULT NULL,
   `value_type` varchar(50) DEFAULT NULL,
