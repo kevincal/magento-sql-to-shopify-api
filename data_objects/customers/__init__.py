@@ -58,7 +58,7 @@ class DataObject(BaseDataObject):
                     FROM shopify_customer
                     WHERE 
                       shopify_id IS NULL AND
-                      NOT EXISTS (SELECT 1 FROM shopify_log l WHERE l.email = shopify_customer.email)
+                      NOT EXISTS (SELECT 1 FROM shopify_log l WHERE l.key = shopify_customer.email)
                     ORDER BY email
                     """
 
