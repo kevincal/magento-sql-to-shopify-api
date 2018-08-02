@@ -38,10 +38,17 @@ Next create a settings file with the proper config:
 - Create the staging tables as outlined in [install/staging_tables.sql](install/staging_tables.sql)
 - Create the required SQL functions found in [install/functions.sql](install/functions.sql)
 
+Note: Several Indexes were added to some of the flat tables to speed up PRIMING queries.
+ie., order_id on sales_flat_shipment and sales_flat_order
+
 
 # Basic Workflow
 
-TBD
+1. Setup Store
+1. Create New Private App
+1. Give App Read & Write Permissions including Storefront API
+1. Copy a settings.*.py file using the domain for * and update the API url, key and password for new store
+1. Open your API Explorer and get the location id for the new store
 
 # Command Line
 

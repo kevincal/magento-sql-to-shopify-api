@@ -75,7 +75,18 @@ class BaseDataObject(object):
 
         if method == "post":
             r = requests.post(api_url, data=data, headers=headers)
+
+        if method == "put":
+            r = requests.put(api_url, data=data, headers=headers)
+
+        if method == "get":
+            r = requests.get(api_url, data=data, headers=headers)
+
+        try:
             response = r.json()
+        except:
+            import pdb
+            pdb.set_trace()
 
         # debug
         self.log(response)

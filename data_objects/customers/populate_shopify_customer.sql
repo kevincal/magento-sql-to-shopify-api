@@ -78,9 +78,7 @@ SET
 WHERE
   s.subscriber_status = 3;;
 
-
 /** ====================== ADDRESS ====================== **/
-
 
 -- Create A Temp Table
 CREATE TEMPORARY TABLE IF NOT EXISTS tmp_recent_order_address
@@ -139,7 +137,7 @@ Note about Customer Address.
    in specific E.164 formats, ie., (NNN) NNN-NNNN;ext=NNN
 **/
 
--- Create the Customer Address from Billing Address
+-- Create the Customer Address from Recent Address
 INSERT INTO shopify_customer_address
 (
   `email`,
@@ -174,6 +172,40 @@ FROM
 	shopify_customer AS sc
 	INNER JOIN tmp_recent_order_address AS recent ON recent.email = sc.email
 	INNER JOIN sales_flat_order_address AS oa ON oa.entity_id = recent.address_id;;
+
+-- Create the Customer Address from Billing Address
+INSERT INTO shopify_customer_address
+(
+  `email`,
+  `magento_id`,
+  `first_name`,
+  `last_name`,
+  `company`,
+  `address1`,
+  `address2`,
+  `city`,
+  `province`,
+  `country_code`,
+  `zip`,
+  `phone`
+)
+SELECT
+  sc.email,
+  oa.entity_id,
+  IFNULL(TRIM(oa.firstname), '') as first_name,
+  IFNULL(TRIM(oa.lastname), '') as last_name,
+  IFNULL(oa.company, '') AS company,
+  IFNULL(SUBSTRING_INDEX(oa.street, '\n', 1), '') AS adddress1,
+  IFNULL(SUBSTRING_INDEX(SUBSTRING_INDEX(oa.street, '\n', 2), '\n', -1), '') AS address2,
+  IFNULL(TRIM(oa.city), '') AS city,
+  IFNULL(oa.region, '') AS province,
+  IFNULL(oa.country_id, '') AS country,
+  IFNULL(TRIM(oa.postcode), '') AS zip,
+  IFNULL(oa.telephone, '') AS phone
+FROM
+	shopify_customer AS sc
+	INNER JOIN sales_flat_order o ON o.customer_email = sc.email
+	INNER JOIN sales_flat_order_address AS oa ON oa.entity_id = o.billing_address_id;;
 
 -- Create the Customer Address from Shipping Address
 INSERT INTO shopify_customer_address
@@ -305,22 +337,6 @@ WHERE
 -- Drop the Temp Table
 DROP TABLE IF EXISTS tmp_recent_order_address;;
 
--- Delete Duplicates
-DELETE shopify_customer_address
-FROM
-	shopify_customer_address,
-	(
-	SELECT MIN(id) AS first_id, email, address1, address2
-	FROM shopify_customer_address
-	GROUP BY email, address1, address2
-	HAVING COUNT(*) > 1
-	) AS m
-WHERE
-	shopify_customer_address.email = m.email AND
-	shopify_customer_address.address1 = m.address1 AND
-	shopify_customer_address.address2 = m.address2 AND
-	shopify_customer_address.id > m.first_id;;
-
 -- Format First Name to Aaaaa if no spaces
 UPDATE shopify_customer_address SET
     first_name = TRIM(CONCAT(UCASE(LEFT(first_name, 1)), SUBSTRING(LOWER(first_name), 2)))
@@ -368,7 +384,16 @@ WHERE
 UPDATE shopify_customer_address SET
 	phone = '', phone_ext = ''
 WHERE
-	phone IN ('8888862342', '5128400233', '5126739891', '5129660631', '8888888888', '5122003201', 'tbd', 'n/a');;
+	phone IN (
+    '8888862342', '5128400233', '5126739891', '5129660631', '8888888888',
+    '5122003201', '888 888 888', '5555555555', '0000000000',
+    '--',  'tbd', 'n/a', 'na', '1111111', '111111111', '2222222', '512-000-000'
+  );;
+
+UPDATE shopify_customer_address SET
+	phone = '', phone_ext = ''
+WHERE
+	LENGTH(phone) = 5;;
 
 -- Reformat Number
 UPDATE shopify_customer_address SET
@@ -464,8 +489,13 @@ SELECT DISTINCT
 	LEFT OUTER JOIN sales_flat_order_address oa ON oa.entity_id = so.billing_address_id
     LEFT OUTER JOIN customer_entity c
     	LEFT OUTER JOIN customer_group cg ON c.group_id = cg.customer_group_id
-    	ON c.entity_id = so.customer_id;;
-
+    	ON c.entity_id = so.customer_id
+ON DUPLICATE KEY UPDATE
+  `value` = CONCAT(`value`, ', ',  CASE
+	WHEN cg.customer_group_code IS NULL THEN 'Direct: Consumer Online'
+	WHEN cg.customer_group_code = 'NOT LOGGED IN' THEN 'Direct: Consumer Online'
+	ELSE cg.customer_group_code
+  END);;
 
 -- Save First Order Date
 INSERT INTO shopify_customer_metafield

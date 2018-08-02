@@ -55,10 +55,11 @@ class DataObject(BaseDataObject):
                     	tags, 
                     	IFNULL(note, '') AS note, 
                     	accepts_marketing, tax_exempt
-                    FROM shopify_customer
+                    FROM shopify_customer c, shopify_log l
                     WHERE 
-                      shopify_id IS NULL AND
-                      NOT EXISTS (SELECT 1 FROM shopify_log l WHERE l.key = shopify_customer.email)
+                      c.email = l.key AND
+                      c.shopify_id IS NULL AND
+                      l.message = '"Not Found"'
                     ORDER BY email
                     """
 
@@ -91,7 +92,7 @@ class DataObject(BaseDataObject):
                               `first_name`, `last_name`, 
                               `company`,
                               `address1`, `address2`, 
-                              TRIM(`city`) as `city`, 
+                              `city`, 
                               `province`, `country_code`, `zip`,
                               `phone`,
                               `is_default` as `default`
@@ -135,6 +136,7 @@ class DataObject(BaseDataObject):
                     self.log(payload)
 
                     # put data
+                    print "Pushing %s." % (c.get("email"),)
                     result = self.api_send('/customers.json', payload, "post")
 
                     # write the shopify id

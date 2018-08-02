@@ -59,7 +59,8 @@ class DataObject(BaseDataObject):
                      `expires_on`,
                      `user_id`,
                      `disabled_at`,
-                     `note`
+                     `note`,
+                     `shopify_id`
                     FROM shopify_gift_card
                     WHERE shopify_id IS NULL
                     ORDER BY `code`
@@ -73,6 +74,10 @@ class DataObject(BaseDataObject):
 
                     code = r.get("code")
 
+                    # reset balance to initial value
+                    r["note"] = "Initial Balance: %s" % r.get("initial_value")
+                    r["initial_value"] = r.get('balance"')
+
                     # base record
                     payload = {
                       "gift_card": r
@@ -80,7 +85,10 @@ class DataObject(BaseDataObject):
 
                     # put data
                     self.log(payload)
-                    result = self.api_send('/gift_cards.json', payload, "post")
+                    if r.get("shopify_id"):
+                        result = self.api_send('/gift_cards/%s.json' % r.get("shopify_id"), payload, "put")
+                    else:
+                        result = self.api_send('/gift_cards.json', payload, "post")
 
                     # write the shopify id
                     if result.get("gift_card"):

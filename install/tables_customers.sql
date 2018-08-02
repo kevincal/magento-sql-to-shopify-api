@@ -66,5 +66,6 @@ CREATE TABLE `shopify_customer_metafield` (
   `value` varchar(255) DEFAULT NULL,
   `value_type` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `email_key` (`email`,`key`),
   KEY `email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;

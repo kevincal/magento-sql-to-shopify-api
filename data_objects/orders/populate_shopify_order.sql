@@ -79,6 +79,15 @@ FROM
   INNER JOIN shopify_customer sc ON sc.email = o.customer_email
   INNER JOIN shopify_customer_address sca ON sca.email = sc.email AND sca.is_default = 1;;
 
+/** ====================== TARGET SHIP DATE / DESIRED DELIVERY ====================== **/
+UPDATE
+  shopify_order o
+  INNER JOIN sales_mlc_order mlc ON mlc.order_id = o.magento_id
+SET
+  o.target_ship_date = mlc.target_ship_date,
+  o.desired_delivery_date = mlc.desired_delivery_date;;
+
+
 /** ====================== ORDER GIFT MESSAGE / NOTE ====================== **/
 
 UPDATE
@@ -90,19 +99,31 @@ SET
 
 /** ====================== ORDER COMMENTS ====================== **/
 
-UPDATE
-  shopify_order so
-  INNER JOIN
-    (
-    SELECT
+-- Create A Temp Table
+CREATE TEMPORARY TABLE IF NOT EXISTS tmp_order_comments
+(
+order_id int(11) NOT NULL,
+comments TEXT,
+PRIMARY KEY (order_id)
+) ENGINE=MyISAM;;
+
+INSERT INTO tmp_order_comments
+(order_id, comments)
+SELECT
     parent_id,
     GROUP_CONCAT(`comment` SEPARATOR '\r\n') AS comments
-    FROM sales_flat_order_status_history
-    WHERE entity_name = 'order' AND `comment` IS NOT NULL
-    GROUP BY parent_id
-    ) AS c ON so.magento_id = c.parent_id
+FROM sales_flat_order_status_history
+WHERE entity_name = 'order' AND `comment` IS NOT NULL
+GROUP BY parent_id;;
+
+UPDATE
+  shopify_order so
+  INNER JOIN tmp_order_comments AS c ON so.magento_id = c.order_id
 SET
   so.comments = c.comments;;
+
+-- Drop the Temp Table
+DROP TABLE IF EXISTS tmp_order_comments;;
 
 /** ====================== ORDER BILLING ADDRESS ====================== **/
 
@@ -217,6 +238,7 @@ FROM
 
 /** ====================== ORDER TRANSACTIONS ====================== **/
 
+-- Payments
 INSERT INTO shopify_order_transaction
 (
   `name`,
@@ -234,21 +256,43 @@ SELECT
     WHEN method LIKE 'paypal%' THEN 'paypal'
     ELSE ''
   END AS `gateway`,
-  CASE
-    WHEN p.amount_refunded > 0 THEN amount_refunded
-      ELSE amount_paid
-  END AS `amount`,
-  CASE
-    WHEN p.amount_refunded > 0 THEN 'refund'
-      ELSE 'sale'
-  END AS `kind`,
+  amount_paid AS `amount`,
+  'sale' AS `kind`,
   'success' AS `status`
 FROM
   sales_flat_order o
   INNER JOIN shopify_order so ON so.name = o.increment_id
   INNER JOIN sales_flat_order_payment p ON p.parent_id = o.entity_id
 WHERE
-  p.amount_paid > 0;;
+  p.amount_paid >= 0;;
+
+-- Refunds
+INSERT INTO shopify_order_transaction
+(
+  `name`,
+  `authorization`,
+  `gateway`,
+  `amount`,
+  `kind`,
+  `status`
+)
+SELECT
+  o.increment_id AS `name`,
+  p.last_trans_id AS `authorization`,
+  CASE
+    WHEN method LIKE 'auth%' THEN 'authorize_net'
+    WHEN method LIKE 'paypal%' THEN 'paypal'
+    ELSE ''
+  END AS `gateway`,
+  p.amount_refunded AS `amount`,
+  'refund' AS `kind`,
+  'success' AS `status`
+FROM
+  sales_flat_order o
+  INNER JOIN shopify_order so ON so.name = o.increment_id
+  INNER JOIN sales_flat_order_payment p ON p.parent_id = o.entity_id
+WHERE
+  p.amount_refunded > 0;;
 
 /** ====================== GIFT CARD TRANSACTIONS ====================== **/
 
@@ -289,7 +333,16 @@ UPDATE
   shopify_order o
   LEFT OUTER JOIN shopify_order_transaction t ON t.name = o.name
 SET
-  o.processing_method = IF(t.gateway != '', 'checkout', 'manual');;
+  o.processing_method = 'checkout'
+WHERE
+  t.gateway != '';;
+
+UPDATE
+  shopify_order o
+  LEFT OUTER JOIN shopify_order_transaction t ON t.name = o.name
+SET o.processing_method = 'manual'
+WHERE
+  t.gateway = '';;
 
 
 /** ====================== UPDATE ORDER INVOICE STATUS ====================== **/
@@ -306,27 +359,65 @@ UPDATE
   INNER JOIN shopify_order so ON so.name = o.increment_id
   INNER JOIN sales_flat_invoice i ON i.order_id = o.entity_id
 SET
-  so.financial_status = CASE
-    WHEN i.state = 1 THEN 'pending'
-    WHEN i.state = 2 THEN 'paid'
-    ELSE 'voided'
-  END;;
+  so.financial_status = 'paid'
+WHERE
+  i.state = 2;;
 
 UPDATE
-  shopify_order o
-  INNER JOIN (
-    SELECT `name`, SUM(`amount`) AS total
-    FROM shopify_order_transaction
-    WHERE kind = 'refund'
-    GROUP BY `name`
-  ) t ON t.name = o.name
+  sales_flat_order o
+  INNER JOIN shopify_order so ON so.name = o.increment_id
+  INNER JOIN sales_flat_invoice i ON i.order_id = o.entity_id
 SET
-  o.financial_status = CASE
-    WHEN t.total = o.total_price THEN 'refunded'
-    ELSE 'partially_refunded'
-  END;;
+  so.financial_status = 'pending'
+WHERE
+  i.state = 1;;
 
+UPDATE
+  sales_flat_order o
+  INNER JOIN shopify_order so ON so.name = o.increment_id
+  INNER JOIN sales_flat_invoice i ON i.order_id = o.entity_id
+SET
+  so.financial_status = 'voided'
+WHERE
+  i.state NOT IN (1,2);;
 
+-- Create A Temp Table
+CREATE TEMPORARY TABLE IF NOT EXISTS tmp_order_refund_totals
+(
+  `name` varchar(25) DEFAULT '',
+  `total_refund` decimal(10,2) DEFAULT 0.00,
+  PRIMARY KEY (`name`)
+) ENGINE=MyISAM;;
+
+-- Populate Temp Table
+INSERT INTO tmp_order_refund_totals (
+  `name`, `total_refund`
+)
+SELECT `name`, SUM(`amount`) AS total
+FROM shopify_order_transaction
+WHERE kind = 'refund'
+GROUP BY `name`;;
+
+-- Update Total Refunded
+UPDATE
+  shopify_order o
+  INNER JOIN tmp_order_refund_totals AS t ON t.name = o.name
+SET
+  o.financial_status = 'refunded'
+WHERE
+  t.total_refund = o.total_price;;
+
+-- Update Partial Refunded
+UPDATE
+  shopify_order o
+  INNER JOIN tmp_order_refund_totals AS t ON t.name = o.name
+SET
+  o.financial_status = 'partially_refunded'
+WHERE
+  t.total_refund < o.total_price;;
+
+-- Drop Table
+DROP TABLE tmp_order_refund_totals;;
 
 /** ====================== ORDER TAX LINE ====================== **/
 
@@ -374,6 +465,7 @@ WHERE
   o.discount_amount != 0;
 
 /** ====================== ORDER FULFILLMENT ====================== **/
+
 INSERT INTO shopify_order_fulfillment
 (
   `name`,
@@ -395,7 +487,18 @@ FROM
   sales_flat_order o
   INNER JOIN shopify_order so ON so.name = o.increment_id
   INNER JOIN sales_flat_shipment sh ON sh.order_id = o.entity_id
-  INNER JOIN sales_flat_shipment_track tr ON tr.parent_id = sh.entity_id;;
+  LEFT OUTER JOIN sales_flat_shipment_track tr ON tr.parent_id = sh.entity_id;;
+
+-- If missing
+UPDATE shopify_order_fulfillment
+SET tracking_company = 'FedEx'
+WHERE
+    tracking_company = '' AND
+    CONCAT('',tracking_number * 1) = tracking_number;;
+
+UPDATE shopify_order_fulfillment
+SET tracking_company = 'Maggie Louise Confections'
+WHERE tracking_company = '';;
 
 /** ====================== ORDER LINE ITEM FULFILLMENT ====================== **/
 UPDATE
@@ -403,6 +506,12 @@ UPDATE
   INNER JOIN shopify_order_fulfillment f ON f.name = li.name
 SET
   li.fulfillment_status = 'fulfilled';
+
+UPDATE
+  shopify_order o
+  INNER JOIN shopify_order_fulfillment f ON f.name = o.name
+SET
+  o.fulfillment_status = 'fulfilled';
 
 
 /** ====================== ORDER SHIPPING LINE ====================== **/
@@ -442,4 +551,21 @@ UPDATE
   INNER JOIN sales_flat_shipment s ON (s.order_id = so.magento_id)
 SET
   closed_at = GREATEST(s.updated_at, i.updated_at);
+
+/** ====================== SPECIAL TAGS ====================== **/
+UPDATE shopify_order o SET
+  tags = CONCAT(tags, ',', 'cancelled')
+WHERE
+  o.cancelled_at IS NOT NULL;;
+
+UPDATE
+    shopify_order o
+    INNER JOIN shopify_order_transaction t ON t.name = o.name
+SET
+  tags = CONCAT(tags, ',', 'refund')
+WHERE
+  t.kind = 'refund';;
+
+
+
 

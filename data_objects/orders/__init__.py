@@ -41,6 +41,9 @@ class DataObject(BaseDataObject):
 
         self.log("Pushing Data...")
 
+        # location id
+        location_id = self.config["shopify"]["location_id"]
+
         # run sql
         db_connection = self.get_db_connection()
 
@@ -62,14 +65,19 @@ class DataObject(BaseDataObject):
                       `total_weight`,
                       `customer_locale`,
                       `currency`,
-                      NULL AS `source_name`,
+                      `fulfillment_status`,
+                      `financial_status`,
                       `processed_at`,
                       `cancel_reason`,
-                      `cancelled_at`,
+                      IFNULL(`cancelled_at`, '') as `cancelled_at`,
                       `tags`,
-                      `comments`
+                      `comments`,
+                      `note`,
+                      `target_ship_date`,
+                      `desired_delivery_date`
                     FROM shopify_order
-                    WHERE shopify_id IS NULL
+                    WHERE 
+                      shopify_id IS NULL 
                     ORDER BY email
                     """
 
@@ -85,6 +93,7 @@ class DataObject(BaseDataObject):
                     payload = {
                         "order": r
                         }
+                    payload["order"]["name"] = "#" + payload["order"]["name"]
                     payload["order"]["billing_address"] = {}
                     payload["order"]["shipping_address"] = {}
 
@@ -99,6 +108,7 @@ class DataObject(BaseDataObject):
                     payload["order"]["refunds"] = []
 
                     # confirmations
+                    payload["order"]["buyer_accepts_marketing"] = True
                     payload["order"]["suppress_notifications"] = True
                     payload["order"]["send_receipt"] = False
                     payload["order"]["send_fulfillment_receipt"] = False
@@ -106,12 +116,35 @@ class DataObject(BaseDataObject):
                     # comments
                     comments = r.get("comments")
                     payload["order"].pop('comments', None)
-                    payload["order"]["note_attributes"] = [
-                        {
-                            "name": "Legacy Comments",
-                            "value": comments
-                        }
-                    ]
+                    if comments:
+                        notes_attributes = payload["order"].get("note_attributes", [])
+                        notes_attributes.append({
+                                "name": "Legacy Comments",
+                                "value": comments
+                            })
+                        payload["order"]["note_attributes"] = notes_attributes
+
+                    # desired delivery date
+                    desired_delivery_date = r.get("desired_delivery_date")
+                    payload["order"].pop('desired_delivery_date', None)
+                    if desired_delivery_date:
+                        notes_attributes = payload["order"].get("note_attributes", [])
+                        notes_attributes.append({
+                                "name": "Desired Delivery Date",
+                                "value": desired_delivery_date
+                            })
+                        payload["order"]["note_attributes"] = notes_attributes
+
+                    # target_ship_date
+                    target_ship_date = r.get("target_ship_date")
+                    payload["order"].pop('target_ship_date', None)
+                    if target_ship_date:
+                        notes_attributes = payload["order"].get("note_attributes", [])
+                        notes_attributes.append({
+                                "name": "Target Ship Date",
+                                "value": target_ship_date
+                            })
+                        payload["order"]["note_attributes"] = notes_attributes
 
                     # get address info
                     address_sql = """
@@ -124,10 +157,9 @@ class DataObject(BaseDataObject):
                         FROM shopify_order_address
                         WHERE name = '%s'
                     """ % order_name
-
-                    self.log(address_sql)
                     cursor.execute(address_sql)
                     addresses = cursor.fetchall()
+
                     for a in addresses:
                         if a.get("is_billing"):
                             a.pop('is_billing', None)
@@ -143,8 +175,6 @@ class DataObject(BaseDataObject):
                         SELECT
                           `sku`,
                           `title`,
-                          `fulfillment_service`,
-                          `fulfillment_status`,
                           `quantity`,
                           `price`,
                           `grams`,
@@ -155,24 +185,21 @@ class DataObject(BaseDataObject):
                         FROM shopify_order_line_item
                         WHERE name = '%s'
                     """ % order_name
-
-                    self.log(attribute_sql)
                     cursor.execute(attribute_sql)
                     payload["order"]["line_items"] = list(cursor.fetchall())
 
                     # get transactions
                     attribute_sql = """
                         SELECT
-                          `authorization`,
+                          IFNULL(`authorization`, '') as `authorization`,
                           `gateway`,
                           `amount`,
                           `kind`,
-                          `status`
+                          `status`,
+                          IFNULL(`gift_card_id`, '') as `gift_card_id`
                         FROM shopify_order_transaction
                         WHERE name = '%s'
                     """ % order_name
-
-                    self.log(attribute_sql)
                     cursor.execute(attribute_sql)
                     payload["order"]["transactions"] = list(cursor.fetchall())
 
@@ -185,8 +212,6 @@ class DataObject(BaseDataObject):
                         FROM shopify_order_tax_line
                         WHERE name = '%s'
                     """ % order_name
-
-                    self.log(attribute_sql)
                     cursor.execute(attribute_sql)
                     payload["order"]["tax_lines"] = list(cursor.fetchall())
 
@@ -199,8 +224,6 @@ class DataObject(BaseDataObject):
                         FROM shopify_order_discount
                         WHERE name = '%s'
                     """ % order_name
-
-                    self.log(attribute_sql)
                     cursor.execute(attribute_sql)
                     payload["order"]["discount_codes"] = list(cursor.fetchall())
 
@@ -210,12 +233,14 @@ class DataObject(BaseDataObject):
                           `status`,
                           `tracking_company`,
                           `tracking_number`,
-                          6948946038 as location_id
+                          CASE
+                            WHEN `tracking_company` = 'Maggie Louise Confections' THEN 'http://mlc.io'
+                            ELSE ''
+                          END as tracking_url,
+                          %s as location_id
                         FROM shopify_order_fulfillment
                         WHERE name = '%s'
-                    """ % order_name
-
-                    self.log(attribute_sql)
+                    """ % (location_id, order_name)
                     cursor.execute(attribute_sql)
                     payload["order"]["fulfillments"] = list(cursor.fetchall())
 
@@ -229,23 +254,6 @@ class DataObject(BaseDataObject):
                         FROM shopify_order_shipping_line
                         WHERE name = '%s'
                     """ % order_name
-
-                    self.log(attribute_sql)
-                    cursor.execute(attribute_sql)
-                    payload["order"]["shipping_lines"] = list(cursor.fetchall())
-
-                    # get shipping lines
-                    attribute_sql = """
-                        SELECT
-                          `code`,
-                          `price`,
-                          `source`,
-                          `title`
-                        FROM shopify_order_shipping_line
-                        WHERE name = '%s'
-                    """ % order_name
-
-                    self.log(attribute_sql)
                     cursor.execute(attribute_sql)
                     payload["order"]["shipping_lines"] = list(cursor.fetchall())
 
@@ -259,8 +267,6 @@ class DataObject(BaseDataObject):
                         FROM shopify_order_metafield
                         WHERE name = '%s'
                     """ % order_name
-
-                    self.log(metafields_sql)
                     cursor.execute(metafields_sql)
                     payload["order"]["metafields"] = list(cursor.fetchall())
 
