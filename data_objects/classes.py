@@ -84,9 +84,9 @@ class BaseDataObject(object):
 
         try:
             response = r.json()
-        except:
-            import pdb
-            pdb.set_trace()
+        except Exception as e:
+            self.log("** REQUEST ERROR")
+            self.log(e)
 
         # debug
         self.log(response)
