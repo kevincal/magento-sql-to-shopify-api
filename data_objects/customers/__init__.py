@@ -55,11 +55,9 @@ class DataObject(BaseDataObject):
                     	tags, 
                     	IFNULL(note, '') AS note, 
                     	accepts_marketing, tax_exempt
-                    FROM shopify_customer c, shopify_log l
+                    FROM shopify_customer c
                     WHERE 
-                      c.email = l.key AND
-                      c.shopify_id IS NULL AND
-                      l.message = '"Not Found"'
+                      c.shopify_id IS NULL
                     ORDER BY email
                     """
 
