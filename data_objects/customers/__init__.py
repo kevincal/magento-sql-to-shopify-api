@@ -137,6 +137,36 @@ class DataObject(BaseDataObject):
                     print "Pushing %s." % (c.get("email"),)
                     result = self.api_send('/customers.json', payload, "post")
 
+                    # if specific errors
+                    if result.get("errors"):
+
+                        errors = result.get("errors")
+
+                        # invalid phone -> pop phone off to the 'notes' field
+                        if isinstance(errors.get("phone"), list):
+
+                            if "is invalid" in errors.get("phone") or "has already been taken" in errors.get("phone"):
+
+                                addresses = payload["customer"]["addresses"]
+                                updated_addresses = []
+
+                                # loop through addresses
+                                old_phone = ""
+                                for a in addresses:
+                                    phone = a.get("phone")
+                                    if phone and phone != old_phone:
+                                        old_phone = phone
+                                        if payload.get("notes"):
+                                            payload["notes"] = payload.get("notes") + ", " + phone
+                                        else:
+                                            payload["notes"] = phone
+
+                                    a["phone"] = ""
+
+                                    updated_addresses.append(a)
+
+                                payload["customer"]["addresses"] = updated_addresses
+
                     # write the shopify id
                     if result.get("customer"):
                         shopify_id = result.get("customer", {}).get("id")

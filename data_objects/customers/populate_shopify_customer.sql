@@ -397,7 +397,7 @@ WHERE
 
 -- Reformat Number
 UPDATE shopify_customer_address SET
-	phone = CONCAT('(', SUBSTR(phone,1,3),') ', SUBSTR(phone,4,3), '-', SUBSTR(phone,7))
+	phone = CONCAT(SUBSTR(phone,1,3),'-', SUBSTR(phone,4,3), '-', SUBSTR(phone,7))
 WHERE
 	LENGTH(phone) = 10;;
 
