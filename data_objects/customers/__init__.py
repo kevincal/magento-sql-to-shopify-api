@@ -167,6 +167,10 @@ class DataObject(BaseDataObject):
 
                                 payload["customer"]["addresses"] = updated_addresses
 
+                                # put data again
+                                print "Pushing AGAIN %s." % (c.get("email"),)
+                                result = self.api_send('/customers.json', payload, "post")
+
                     # write the shopify id
                     if result.get("customer"):
                         shopify_id = result.get("customer", {}).get("id")
