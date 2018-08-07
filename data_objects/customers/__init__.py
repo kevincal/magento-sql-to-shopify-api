@@ -146,11 +146,23 @@ class DataObject(BaseDataObject):
 
                             if "is invalid" in errors.get("phone") or "has already been taken" in errors.get("phone"):
 
-                                addresses = payload["customer"]["addresses"]
-                                updated_addresses = []
+                                # set old phone number
+                                old_phone = ""
+
+                                # replace customer phone
+                                phone = payload["customer"].get("phone")
+                                if phone:
+                                    if payload.get("notes"):
+                                        payload["notes"] = payload.get("notes") + ", " + phone
+                                    else:
+                                        payload["notes"] = phone
+
+                                    payload["customer"]["phone"] = ""
+                                    old_phone = phone
 
                                 # loop through addresses
-                                old_phone = ""
+                                addresses = payload["customer"]["addresses"]
+                                updated_addresses = []
                                 for a in addresses:
                                     phone = a.get("phone")
                                     if phone and phone != old_phone:
