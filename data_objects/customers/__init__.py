@@ -131,10 +131,9 @@ class DataObject(BaseDataObject):
                     cursor.execute(metafields_sql)
                     payload["customer"]["metafields"] = list(cursor.fetchall())
 
-                    self.log(payload)
-
                     # put data
                     print "Pushing %s." % (c.get("email"),)
+                    self.log(payload)
                     result = self.api_send('/customers.json', payload, "post")
 
                     # if specific errors
@@ -169,6 +168,7 @@ class DataObject(BaseDataObject):
 
                                 # put data again
                                 print "Pushing AGAIN %s." % (c.get("email"),)
+                                self.log(payload)
                                 result = self.api_send('/customers.json', payload, "post")
 
                     # write the shopify id
