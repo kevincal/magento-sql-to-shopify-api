@@ -78,6 +78,25 @@ class DataObject(BaseDataObject):
                     r["note"] = "Initial Balance: %s" % r.get("initial_value")
                     r["initial_value"] = r.get('balance')
 
+                    if r["initial_value"] == 0:
+                        r["initial_value"] = 0.01
+
+                    # code must be 8 chars so append "-000" to end
+                    code_length = len(r["code"])
+                    if code_length < 8:
+
+                        # add padding
+                        padding = 8 - code_length - 1
+
+                        # add note
+                        if r.get("note"):
+                            r["note"] = r["note"] + "\n Original Code was %s. Had to add padding to make 8 chars." % code
+                        else:
+                            r["note"] = "Original Code was %s. Had to add padding to make 8 chars." % code
+
+                        # change code
+                        r["code"] = code + "-" + ("0" * padding)
+
                     # base record
                     payload = {
                       "gift_card": r
