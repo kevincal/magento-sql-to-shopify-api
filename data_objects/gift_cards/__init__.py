@@ -76,7 +76,7 @@ class DataObject(BaseDataObject):
 
                     # reset balance to initial value
                     r["note"] = "Initial Balance: %s" % r.get("initial_value")
-                    r["initial_value"] = r.get('balance"')
+                    r["initial_value"] = r.get('balance')
 
                     # base record
                     payload = {
