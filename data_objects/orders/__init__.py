@@ -274,6 +274,54 @@ class DataObject(BaseDataObject):
                     self.log(payload)
                     result = self.api_send('/orders.json', payload, "post")
 
+                    # if specific errors
+                    if result.get("errors"):
+
+                        errors = result.get("errors")
+
+                        # invalid phone -> pop phone off to the 'notes' field
+                        if isinstance(errors.get("order"), list):
+
+                            if "Phone is invalid" in errors.get("order"):
+
+                                # replace order phone
+                                phone = payload["order"].get("phone")
+                                if phone:
+                                    notes_attributes = payload["order"].get("note_attributes", [])
+                                    notes_attributes.append({
+                                        "name": "Original Phone #",
+                                        "value": phone
+                                    })
+                                    payload["order"]["note_attributes"] = notes_attributes
+                                    payload["order"]["phone"] = ""
+
+                                # billing address phone
+                                phone = payload["order"]["billing_address"].get("phone")
+                                if phone:
+                                    notes_attributes = payload["order"].get("note_attributes", [])
+                                    notes_attributes.append({
+                                        "name": "Billing Phone #",
+                                        "value": phone
+                                    })
+                                    payload["order"]["note_attributes"] = notes_attributes
+                                    payload["order"]["billing_address"]["phone"] = ""
+
+                                # shipping address phone
+                                phone = payload["order"]["shipping_address"].get("phone")
+                                if phone:
+                                    notes_attributes = payload["order"].get("note_attributes", [])
+                                    notes_attributes.append({
+                                        "name": "Shipping Phone #",
+                                        "value": phone
+                                    })
+                                    payload["order"]["note_attributes"] = notes_attributes
+                                    payload["order"]["shipping_address"]["phone"] = ""
+
+                            # put data again
+                            print "Pushing AGAIN %s." % (payload.get("name"),)
+                            self.log(payload)
+                            result = self.api_send('/orders.json', payload, "post")
+
                     # write the shopify id
                     if result.get("order"):
 
