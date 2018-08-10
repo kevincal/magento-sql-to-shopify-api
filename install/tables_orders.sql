@@ -104,6 +104,7 @@ CREATE TABLE `shopify_order_line_item` (
   `grams` int(10) DEFAULT NULL,
   `total_tax` decimal(10,2) DEFAULT 0,
   `total_discount` decimal(10,2) DEFAULT 0,
+  `gift_card` smallint(1) DEFAULT 0,
   `requires_shipping` smallint(1) DEFAULT 1,
   `taxable` smallint(1) DEFAULT 1,
   PRIMARY KEY (`id`),

@@ -238,6 +238,7 @@ INSERT INTO shopify_order_line_item
   `grams`,
   `total_tax`,
   `total_discount`,
+  `gift_card`,
   `requires_shipping`,
   `taxable`
 )
@@ -252,8 +253,9 @@ SELECT
   ROUND(oi.weight * 453.592, 0) AS `grams`,
   oi.tax_amount AS `total_tax`,
   oi.discount_amount AS `total_discount`,
-  1 AS `requires_shipping`,
-  1 AS `taxable`
+  IF(oi.sku != 'mlc-gift-card', 0, 1) AS `gift_card`,
+  IF(oi.sku != 'mlc-gift-card', 1, 0) AS `requires_shipping`,
+  IF(oi.sku != 'mlc-gift-card', 1, 0) AS `taxable`
 FROM
   sales_flat_order o
   INNER JOIN shopify_order so ON so.name = o.increment_id
@@ -544,6 +546,13 @@ UPDATE
 SET
   o.fulfillment_status = 'fulfilled';;
 
+UPDATE
+  shopify_order o
+  INNER JOIN shopify_order_line_item li ON li.name = o.name
+SET
+  o.fulfillment_status = 'fulfilled'
+WHERE
+  li.gift_card = 1;;
 
 /** ====================== ORDER SHIPPING LINE ====================== **/
 INSERT INTO shopify_order_shipping_line
