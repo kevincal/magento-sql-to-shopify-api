@@ -244,6 +244,24 @@ class DataObject(BaseDataObject):
                     cursor.execute(attribute_sql)
                     payload["order"]["fulfillments"] = list(cursor.fetchall())
 
+                    # if more than 1, collapse tracking numbers into 1 fulfillment
+                    tracking_numbers = []
+                    fulfillments = payload["order"]["fulfillments"]
+                    if len(fulfillments) > 1:
+                        fulfullment = payload["order"]["fulfillments"][0]
+
+                        # loop through existing
+                        for f in fulfillments:
+                            if f.get("tracking_number"):
+                                tracking_numbers.append(f["tracking_number"])
+
+                        # switch tracking_number for tracking_numbers
+                        fulfullment["tracking_numbers"] = tracking_numbers
+                        del(fulfullment["tracking_number"])
+
+                        # append
+                        payload["order"]["fulfillments"] = [fulfullment,]
+
                     # get shipping lines
                     attribute_sql = """
                         SELECT

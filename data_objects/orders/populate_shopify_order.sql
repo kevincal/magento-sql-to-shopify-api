@@ -218,8 +218,8 @@ INSERT INTO shopify_order_line_item
 )
 SELECT
   o.increment_id AS `name`,
-  oi.sku AS `sku`,
-  pname.value AS `title`,
+  p.sku AS `sku`,
+  IFNULL(pname.value, oi.name) AS `title`,
   'manual' AS `fulfillment_service`,
   NULL AS `fulfillment_status`,
   oi.qty_ordered AS `quantity`,
@@ -233,7 +233,8 @@ FROM
   sales_flat_order o
   INNER JOIN shopify_order so ON so.name = o.increment_id
   INNER JOIN sales_flat_order_item oi ON oi.order_id = o.entity_id
-  INNER JOIN catalog_product_entity_varchar pname ON (oi.product_id = pname.entity_id AND pname.attribute_id = 71);;
+  INNER JOIN catalog_product_entity p ON oi.product_id = p.entity_id
+  LEFT OUTER JOIN catalog_product_entity_varchar pname ON (oi.product_id = pname.entity_id AND pname.attribute_id = 71);;
 
 
 /** ====================== ORDER TRANSACTIONS ====================== **/
@@ -505,13 +506,13 @@ UPDATE
   shopify_order_line_item li
   INNER JOIN shopify_order_fulfillment f ON f.name = li.name
 SET
-  li.fulfillment_status = 'fulfilled';
+  li.fulfillment_status = 'fulfilled';;
 
 UPDATE
   shopify_order o
   INNER JOIN shopify_order_fulfillment f ON f.name = o.name
 SET
-  o.fulfillment_status = 'fulfilled';
+  o.fulfillment_status = 'fulfilled';;
 
 
 /** ====================== ORDER SHIPPING LINE ====================== **/
@@ -538,6 +539,7 @@ SELECT DISTINCT
     WHEN o.shipping_description LIKE '%local%' THEN 'Local Delivery'
     WHEN o.shipping_description LIKE '%Austin%' THEN 'In-Store Pickup'
     WHEN o.shipping_description LIKE '%in-store%' THEN 'In-Store Pickup'
+    WHEN o.shipping_description = '' THEN 'Standard Shipping'
     ELSE o.shipping_description
   END AS `title`
 FROM
@@ -550,7 +552,7 @@ UPDATE
   INNER JOIN sales_flat_invoice i ON (i.order_id = so.magento_id AND i.state = 2)
   INNER JOIN sales_flat_shipment s ON (s.order_id = so.magento_id)
 SET
-  closed_at = GREATEST(s.updated_at, i.updated_at);
+  closed_at = GREATEST(s.updated_at, i.updated_at);;
 
 /** ====================== SPECIAL TAGS ====================== **/
 UPDATE shopify_order o SET
