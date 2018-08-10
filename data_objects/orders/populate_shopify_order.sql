@@ -198,6 +198,31 @@ FROM
   INNER JOIN shopify_order so ON so.name = o.increment_id
   INNER JOIN shopify_customer_address sca ON sca.magento_id = o.shipping_address_id;;
 
+/** ====================== SOME ORDERS DON'T HAVE SHIPPING ADDRESSES ====================== **/
+
+-- Create A Temp Table
+CREATE TEMPORARY TABLE IF NOT EXISTS tmp_order_missing_shipping
+(
+  `name` varchar(25) DEFAULT '',
+  PRIMARY KEY (`name`)
+) ENGINE=MyISAM;;
+
+INSERT INTO tmp_order_missing_shipping
+SELECT `name`
+  FROM shopify_order_address oab
+  WHERE
+    is_shipping = 0 AND NOT EXISTS (
+    SELECT 1
+    FROM shopify_order_address oas
+    WHERE oas.name = oab.name AND oas.is_shipping = 1;;
+
+UPDATE
+  shopify_order_address oa
+  INNER JOIN tmp_order_missing_shipping ms ON ms.name = oa.name
+SET oa.is_shipping = 1;;
+
+-- Create A Temp Table
+DROP TABLE tmp_order_missing_shipping;;
 
 /** ====================== ORDER LINE ITEM ====================== **/
 
@@ -218,7 +243,7 @@ INSERT INTO shopify_order_line_item
 )
 SELECT
   o.increment_id AS `name`,
-  p.sku AS `sku`,
+  IFNULL(p.sku, oi.sku) AS `sku`,
   IFNULL(pname.value, oi.name) AS `title`,
   'manual' AS `fulfillment_service`,
   NULL AS `fulfillment_status`,
@@ -233,7 +258,7 @@ FROM
   sales_flat_order o
   INNER JOIN shopify_order so ON so.name = o.increment_id
   INNER JOIN sales_flat_order_item oi ON oi.order_id = o.entity_id
-  INNER JOIN catalog_product_entity p ON oi.product_id = p.entity_id
+  LEFT OUTER JOIN catalog_product_entity p ON oi.product_id = p.entity_id
   LEFT OUTER JOIN catalog_product_entity_varchar pname ON (oi.product_id = pname.entity_id AND pname.attribute_id = 71);;
 
 

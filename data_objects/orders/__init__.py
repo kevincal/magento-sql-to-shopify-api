@@ -162,12 +162,8 @@ class DataObject(BaseDataObject):
 
                     for a in addresses:
                         if a.get("is_billing"):
-                            a.pop('is_billing', None)
-                            a.pop('is_shipping', None)
                             payload["order"]["billing_address"] = a
                         if a.get("is_shipping"):
-                            a.pop('is_billing', None)
-                            a.pop('is_shipping', None)
                             payload["order"]["shipping_address"] = a
 
                     # get line items
