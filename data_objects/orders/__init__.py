@@ -296,6 +296,7 @@ class DataObject(BaseDataObject):
                     if result.get("errors"):
 
                         errors = result.get("errors")
+                        self.log(errors)
 
                         # invalid phone -> pop phone off to the 'notes' field
                         if isinstance(errors.get("order"), list):

@@ -420,6 +420,11 @@ WHERE
 -- Drop Table
 DROP TABLE tmp_order_refund_totals;;
 
+/** ====================== DELETE $0.00 Sale Transacftions ====================== **/
+DELETE FROM shopify_order_transaction
+wHERE kind = 'sale' AND status = 'success' AND amount = 0;;
+
+
 /** ====================== ORDER TAX LINE ====================== **/
 
 INSERT INTO shopify_order_tax_line
