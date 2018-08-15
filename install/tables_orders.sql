@@ -94,6 +94,7 @@ CREATE TABLE `shopify_order_fulfillment` (
 DROP TABLE IF EXISTS `shopify_order_line_item`;
 CREATE TABLE `shopify_order_line_item` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `magento_id` int(10) DEFAULT NULL,
   `name` varchar(25) DEFAULT NULL,
   `sku` varchar(255) DEFAULT NULL,
   `title` varchar(255) DEFAULT NULL,
@@ -107,6 +108,8 @@ CREATE TABLE `shopify_order_line_item` (
   `gift_card` smallint(1) DEFAULT 0,
   `requires_shipping` smallint(1) DEFAULT 1,
   `taxable` smallint(1) DEFAULT 1,
+  `artifi_params` TEXT,
+  `artifi_design_url` TEXT,
   PRIMARY KEY (`id`),
   KEY `name` (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;

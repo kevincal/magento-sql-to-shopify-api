@@ -229,6 +229,7 @@ DROP TABLE tmp_order_missing_shipping;;
 INSERT INTO shopify_order_line_item
 (
   `name`,
+  `magento_id`,
   `sku`,
   `title`,
   `fulfillment_service`,
@@ -240,10 +241,13 @@ INSERT INTO shopify_order_line_item
   `total_discount`,
   `gift_card`,
   `requires_shipping`,
-  `taxable`
+  `taxable`,
+  `artifi_params`,
+  `artifi_design_url`
 )
 SELECT
   o.increment_id AS `name`,
+  oi.item_id as magento_id,
   IFNULL(p.sku, oi.sku) AS `sku`,
   IFNULL(pname.value, oi.name) AS `title`,
   'manual' AS `fulfillment_service`,
@@ -255,13 +259,16 @@ SELECT
   oi.discount_amount AS `total_discount`,
   IF(oi.sku != 'mlc-gift-card', 0, 1) AS `gift_card`,
   IF(oi.sku != 'mlc-gift-card', 1, 0) AS `requires_shipping`,
-  IF(oi.sku != 'mlc-gift-card', 1, 0) AS `taxable`
+  IF(oi.sku != 'mlc-gift-card', 1, 0) AS `taxable`,
+  artifi.cart_params AS artifi_params,
+  artifi.design_params AS artifi_design_url
 FROM
   sales_flat_order o
   INNER JOIN shopify_order so ON so.name = o.increment_id
   INNER JOIN sales_flat_order_item oi ON oi.order_id = o.entity_id
   LEFT OUTER JOIN catalog_product_entity p ON oi.product_id = p.entity_id
-  LEFT OUTER JOIN catalog_product_entity_varchar pname ON (oi.product_id = pname.entity_id AND pname.attribute_id = 71);;
+  LEFT OUTER JOIN catalog_product_entity_varchar pname ON (oi.product_id = pname.entity_id AND pname.attribute_id = 71)
+  LEFT OUTER JOIN personalize artifi ON (artifi.item_id = oi.quote_item_id AND artifi.order_id = o.increment_id);;
 
 
 /** ====================== ORDER TRANSACTIONS ====================== **/

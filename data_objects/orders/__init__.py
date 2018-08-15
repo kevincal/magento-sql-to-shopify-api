@@ -182,7 +182,44 @@ class DataObject(BaseDataObject):
                         WHERE name = '%s'
                     """ % order_name
                     cursor.execute(attribute_sql)
-                    payload["order"]["line_items"] = list(cursor.fetchall())
+                    line_items = list(cursor.fetchall())
+
+                    # loop through line items and add properties
+                    updated_line_items = []
+
+                    for li in line_items:
+
+                        # create new properties list
+                        properties = []
+
+                        # get artifi params, it's the GET STRING
+                        artifi_params = li.get("artifi_params")
+                        if artifi_params:
+                            property = {
+                                'name': 'Artifi Customixation',
+                                'value': artifi_params
+                            }
+                            properties.append(property)
+                            del(li["artifi_params"])
+
+                        # design url is the link to PNG preview
+                        artifi_design_url = li.get("artifi_design_url")
+                        if artifi_design_url:
+                            property = {
+                                'name': 'Artifi Link',
+                                'value': artifi_design_url
+                            }
+                            properties.append(property)
+                            del (li["artifi_design_url"])
+
+                        # append properties list to li
+                        li["properties"] = properties
+
+                        # add li to updated_line_items
+                        updated_line_items.append(li)
+
+                    # add the new line items
+                    payload["order"]["line_items"] = updated_line_items
 
                     # get transactions
                     attribute_sql = """
