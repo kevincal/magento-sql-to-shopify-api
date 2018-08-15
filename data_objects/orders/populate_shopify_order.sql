@@ -16,7 +16,7 @@
 */
 
 -- Reset Tables
-TRUNCATE TABLE shopify_order;;
+-- TRUNCATE TABLE shopify_order;;
 TRUNCATE TABLE shopify_order_address;
 TRUNCATE TABLE shopify_order_line_item;;
 TRUNCATE TABLE shopify_order_transaction;;
@@ -30,7 +30,7 @@ TRUNCATE TABLE shopify_order_shipping_line;
 Notes about Order Record:
 1. `name` field is the magento increment id (order #)
 **/
-INSERT INTO shopify_order
+INSERT IGNORE INTO shopify_order
 (
   `magento_id`,
   `email`,
@@ -207,14 +207,17 @@ CREATE TEMPORARY TABLE IF NOT EXISTS tmp_order_missing_shipping
   PRIMARY KEY (`name`)
 ) ENGINE=MyISAM;;
 
+TRUNCATE TABLE tmp_order_missing_shipping;;
+
 INSERT INTO tmp_order_missing_shipping
 SELECT `name`
   FROM shopify_order_address oab
   WHERE
-    is_shipping = 0 AND NOT EXISTS (
-    SELECT 1
-    FROM shopify_order_address oas
-    WHERE oas.name = oab.name AND oas.is_shipping = 1;;
+    is_shipping = 0 AND NOT EXISTS(
+        SELECT 1
+        FROM shopify_order_address oas
+        WHERE oas.name = oab.name AND oas.is_shipping = 1
+    );;
 
 UPDATE
   shopify_order_address oa

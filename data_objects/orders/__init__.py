@@ -176,8 +176,10 @@ class DataObject(BaseDataObject):
                           `grams`,
                           -- `total_tax`,
                           `total_discount`,
-                          `requires_shipping`
+                          `requires_shipping`,
                           -- , `taxable`
+                          artifi_params,
+                          artifi_design_url
                         FROM shopify_order_line_item
                         WHERE name = '%s'
                     """ % order_name
@@ -196,7 +198,7 @@ class DataObject(BaseDataObject):
                         artifi_params = li.get("artifi_params")
                         if artifi_params:
                             property = {
-                                'name': 'Artifi Customixation',
+                                'name': 'Customization',
                                 'value': artifi_params
                             }
                             properties.append(property)
@@ -206,7 +208,7 @@ class DataObject(BaseDataObject):
                         artifi_design_url = li.get("artifi_design_url")
                         if artifi_design_url:
                             property = {
-                                'name': 'Artifi Link',
+                                'name': 'Custom Design Image',
                                 'value': artifi_design_url
                             }
                             properties.append(property)
