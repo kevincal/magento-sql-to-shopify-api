@@ -13,7 +13,7 @@
 */
 
 -- Reset Tables
-TRUNCATE TABLE shopify_customer;;
+-- TRUNCATE TABLE shopify_customer;;
 TRUNCATE TABLE shopify_customer_address;;
 TRUNCATE TABLE shopify_customer_metafield;;
 
