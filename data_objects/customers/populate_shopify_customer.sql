@@ -54,7 +54,7 @@ FROM
 	LEFT OUTER JOIN newsletter_subscriber ns ON ns.subscriber_email = so.customer_email
 WHERE
   so.customer_email IS NOT NULL AND
-  cg.customer_group_code NOT LIKE '%MLC%';;
+  cg.customer_group_code != 'MLC: Inventory';;
 
 -- Update Magento ID
 UPDATE
