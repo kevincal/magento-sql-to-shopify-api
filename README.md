@@ -13,6 +13,51 @@ We also did not use complicated objects so did not have to worry about variants 
 
 USE AT YOUR OWN RISK. I MADE THIS PUBLIC AS A GUIDE FOR OTHERS. IT IS NOT A MAGIC BULLET.
 
+## WORKFLOW IN A NUTSHELL
+First I compartmentalize the basic objects I want to import and ensure they're in the correct order of import: Products, Customers, Gift Cards, Orders
+ 
+For each object type, we PRIME a set of staging tables that enable us to run transforms on the data to ensure they fit the shopify model.
+ 
+After priming the tables, we PUSH the data from the staging tables into the Shopify API.
+ 
+## IMPORTANT
+YOU CANNOT USE THIS OUT OF THE BOX. I created some intermediary tables and had some logic in my magento app that you may want to remove. ie., I kept track of target ship date in a sales_mlc_order table.   This code is meant to be a guide only.
+
+
+    /** TARGET SHIP DATE / DESIRED DELIVERY = **/
+    UPDATE
+        shopify_order o
+        INNER JOIN sales_mlc_order mlc ON mlc.order_id = o.magento_id
+    SET
+        o.target_ship_date = mlc.target_ship_date,
+        o.desired_delivery_date = mlc.desired_delivery_date;;
+ 
+
+## NUANCES
+
+* If using GIFT CARDS, you'll need that API activated by your Launch Manager
+* My recommendation is to setup several staging instances and test. ie. abc-qa-1.myshopify.com, abc-qa-2.myshopify.com, abc-qa-3.myshopify.com
+* LocationID is required and there is no easy way to get it from the Shopify Admin site.  Inside a python shell you can query it easily enough.
+
+```
+# endppoint
+endpoint = "/locations.json"
+
+# build api params
+shopify_api_url = "https://%s:%s@%s/admin" % (config["shopify"]["key"],
+                                                      config["shopify"]["password"],
+                                                      config["shopify"]["url"])
+
+# build headers
+headers = {'content-type': 'application/json'}
+
+# build API url
+api_url = shopify_api_url + endpoint
+
+r = requests.get(api_url, headers=headers)
+print r.json()
+```
+
 # Requirements
 
 - VirtualEnv
