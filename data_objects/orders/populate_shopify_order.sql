@@ -64,7 +64,7 @@ SELECT DISTINCT
   'en-US' AS `customer_locale`,
   'USD' AS `currency`,
   'api' AS `source_name`,
-  o.updated_at - INTERVAL 5 HOUR AS `processed_at`,
+  o.created_at - INTERVAL 5 HOUR AS `processed_at`,
   CASE
     WHEN o.status IN ('canceled', 'closed') THEN 'customer'
     ELSE ''
