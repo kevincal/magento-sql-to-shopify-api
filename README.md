@@ -4,6 +4,11 @@ Python Scripts to pull data directly from Magento SQL and push into Shopify API
 
 Currently supporting CE 1.9x
 
+# READ FIRST
+
+We had custom tables in use for our Magento Instance.  We use these tables in the Priming SQL scripts.  You should fork this app and customize your own PRIMING SQL.
+ie., grep for 'sales_mlc_order'  
+
 # Requirements
 
 - VirtualEnv
