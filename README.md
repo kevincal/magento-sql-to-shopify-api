@@ -7,7 +7,11 @@ Currently supporting CE 1.9x
 # READ FIRST
 
 We had custom tables in use for our Magento Instance.  We use these tables in the Priming SQL scripts.  You should fork this app and customize your own PRIMING SQL.
-ie., grep for 'sales_mlc_order'  
+ie., grep for 'sales_mlc_order' or 'personalize'
+
+We also did not use complicated objects so did not have to worry about variants or relationships between products. We also had a small number of SKUs (<1000)
+
+USE AT YOUR OWN RISK. I MADE THIS PUBLIC AS A GUIDE FOR OTHERS. IT IS NOT A MAGIC BULLET.
 
 # Requirements
 
